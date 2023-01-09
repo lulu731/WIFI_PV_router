@@ -17,10 +17,14 @@ void handleNotFound();
 
 void setup()
 {
+  Serial.begin(115200);
+  delay(10);
+
+  // Start the access point
+  WiFi.softAP(ap_ssid, ap_password);
   #ifdef DEBUG_HARD
-    Serial.begin(115200);         // Start the Serial communication to send messages to the computer
-    delay(10);
-    Serial.println('\n');
+    Serial.print("AccessPt_IP address:\t");
+    Serial.println(WiFi.softAPIP());
   #endif
 
   // Connect to WiFi network
@@ -32,23 +36,18 @@ void setup()
     Serial.println(" ...");
   #endif
 
-  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    #ifdef DEBUG_HARD
-      Serial.println("Connection Failed! Rebooting...");
-    #endif
-    ESP.restart();
-  }
-
+  int8_t connectionStatus = WiFi.waitForConnectResult();
   #ifdef DEBUG_HARD
-    Serial.println('\n');
-    Serial.println("Connection established!");
-    Serial.print("IP address:\t");
-    Serial.println(WiFi.localIP());
-  #endif
-
-  #ifndef DEBUG_HARD
-    Serial.begin(115200);         // Start the Serial communication with MEGA
-    delay(10);
+    if (connectionStatus != WL_CONNECTED) {
+      Serial.print("Connection Failed! ");
+      Serial.println(connectionStatus);
+    }
+    else {
+      Serial.println('\n');
+      Serial.println("Connection established!");
+      Serial.print("IP address:\t");
+      Serial.println(WiFi.localIP());
+    }
   #endif
 
   bool isMDNSStarted = MDNS.begin("pvrouter");
