@@ -27,6 +27,12 @@ void setup()
     Serial.println(WiFi.softAPIP());
   #endif
 
+  // Define static local IP
+  IPAddress local_IP(192, 168, 1, 180);
+  IPAddress gateway(192, 168, 1, 254);
+  IPAddress subnet(255, 255, 255, 0);
+  WiFi.config(local_IP, gateway, subnet);
+
   // Connect to WiFi network
   WiFi.enableSTA(true);
   WiFi.begin(ssid, password);             // Connect to the network
