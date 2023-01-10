@@ -42,22 +42,13 @@ void setup()
     Serial.println(" ...");
   #endif
 
-  int8_t connectionStatus = WiFi.waitForConnectResult();
-  #ifdef DEBUG_HARD
-    if (connectionStatus != WL_CONNECTED) {
-      Serial.print("Connection Failed! ");
-      Serial.println(connectionStatus);
-    }
-    else {
-      Serial.println('\n');
-      Serial.println("Connection established!");
-      Serial.print("IP address:\t");
-      Serial.println(WiFi.localIP());
-    }
-  #endif
+  while (WiFi.waitForConnectResult()!=WL_CONNECTED) delay(1000);
 
   bool isMDNSStarted = MDNS.begin("pvrouter");
   #ifdef DEBUG_HARD
+    Serial.println("Connection established!");
+    Serial.print("IP address:\t");
+    Serial.println(WiFi.localIP());
     Serial.println("mDNS responder started ?");
     Serial.println(isMDNSStarted);
   #endif
