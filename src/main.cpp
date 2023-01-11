@@ -23,19 +23,23 @@ void setup()
   // Start the access point
   WiFi.softAP(ap_ssid, ap_password);
   #ifdef DEBUG_HARD
-    Serial.print("AccessPt_IP address:\t");
+    Serial.print("AccessPt_IP address : \t");
     Serial.println(WiFi.softAPIP());
   #endif
 
   // Define static local IP
-  IPAddress local_IP(192, 168, 1, 180);
-  IPAddress gateway(192, 168, 1, 254);
-  IPAddress subnet(255, 255, 255, 0);
-  WiFi.config(local_IP, gateway, subnet);
+  #ifdef PVROUTER_IP
+    IPAddress local_IP;
+    local_IP.fromString(PVROUTER_IP);
+    IPAddress gateway(192, 168, 1, 254);
+    IPAddress subnet(255, 255, 255, 0);
+    WiFi.config(local_IP, gateway, subnet);
+  #endif
 
   // Connect to WiFi network
   WiFi.enableSTA(true);
   WiFi.begin(ssid, password);             // Connect to the network
+
   #ifdef DEBUG_HARD
     Serial.print("Connecting to ");
     Serial.print(ssid);
@@ -44,13 +48,18 @@ void setup()
 
   while (WiFi.waitForConnectResult()!=WL_CONNECTED) delay(1000);
 
-  bool isMDNSStarted = MDNS.begin("pvrouter");
   #ifdef DEBUG_HARD
     Serial.println("Connection established!");
     Serial.print("IP address:\t");
     Serial.println(WiFi.localIP());
-    Serial.println("mDNS responder started ?");
-    Serial.println(isMDNSStarted);
+  #endif
+
+  #ifdef PVROUTER_NAME
+    MDNS.begin(PVROUTER_NAME);
+    #ifdef DEBUG_HARD
+      Serial.print("mDNS responder startedc: ");
+      Serial.println(PVROUTER_NAME);
+    #endif
   #endif
 
   // Start WebServer
