@@ -1,10 +1,13 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include "secrets.h"
 #include "OTA_update.h"
 #include "web_server.h"
+#include "wifi_manager.h"
+
+#define LOCAL_IP PVROUTER_IP
+#define SERVER_NAME PVROUTER_NAME
 
 //WebServer creation
 ESP8266WebServer server(80);
@@ -20,46 +23,15 @@ void setup()
   Serial.begin(115200);
   delay(10);
 
-  // Start the access point
-  WiFi.softAP(ap_ssid, ap_password);
+  //Connect to Wifi or open Access Point
+  WIFI_MGR WifiMgr(LOCAL_IP, "192.168.1.254", "255.255.255.0");
+  if (!WifiMgr.Connect(ssid, password)) // Connect to the network
+    WifiMgr.AP(ap_ssid, ap_password); // Start the access point if no Wifi connection
+
+  MDNS.begin(SERVER_NAME);
   #ifdef DEBUG_HARD
-    Serial.print("AccessPt_IP address : \t");
-    Serial.println(WiFi.softAPIP());
-  #endif
-
-  // Define static local IP
-  #ifdef PVROUTER_IP
-    IPAddress local_IP;
-    local_IP.fromString(PVROUTER_IP);
-    IPAddress gateway(192, 168, 1, 254);
-    IPAddress subnet(255, 255, 255, 0);
-    WiFi.config(local_IP, gateway, subnet);
-  #endif
-
-  // Connect to WiFi network
-  WiFi.enableSTA(true);
-  WiFi.begin(ssid, password);             // Connect to the network
-
-  #ifdef DEBUG_HARD
-    Serial.print("Connecting to ");
-    Serial.print(ssid);
-    Serial.println(" ...");
-  #endif
-
-  while (WiFi.waitForConnectResult()!=WL_CONNECTED) delay(1000);
-
-  #ifdef DEBUG_HARD
-    Serial.println("Connection established!");
-    Serial.print("IP address:\t");
-    Serial.println(WiFi.localIP());
-  #endif
-
-  #ifdef PVROUTER_NAME
-    MDNS.begin(PVROUTER_NAME);
-    #ifdef DEBUG_HARD
-      Serial.print("mDNS responder startedc: ");
-      Serial.println(PVROUTER_NAME);
-    #endif
+    Serial.print("mDNS responder started: ");
+    Serial.println(SERVER_NAME);
   #endif
 
   // Start WebServer
