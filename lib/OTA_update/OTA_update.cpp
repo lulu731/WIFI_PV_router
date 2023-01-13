@@ -1,12 +1,9 @@
 #include <ArduinoOTA.h>
+#include <ESP8266WebServer.h>
 #include "OTA_update.h"
 
-void OtaUpdate() {
-  server.setContentLength(10000);
-  server.send(200, "text/html", "Updating requested !");
-  server.sendContent("Ready");
-  server.sendContent("IP address: ");
-  server.sendContent(WiFi.localIP().toString());
+
+void OTAUpdate() {
   ArduinoOTA.onStart([]() {
 
   });
@@ -26,7 +23,18 @@ void OtaUpdate() {
   ArduinoOTA.begin();
 }
 
-void HandleOtaUpdate()
+
+void OTAUpdate(ESP8266WebServer& aServer) {
+  aServer.setContentLength(10000);
+  aServer.send(200, "text/html", "Updating requested !");
+  aServer.sendContent("Ready");
+  aServer.sendContent("IP address: ");
+  aServer.sendContent(WiFi.localIP().toString());
+  OTAUpdate();
+}
+
+
+void HandleOTAUpdate()
 {
   ArduinoOTA.handle();
 }
