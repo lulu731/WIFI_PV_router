@@ -1,21 +1,14 @@
-#include <ESP8266WebServer.h>
 #include "web_server.h"
+#include "build_page.h"
 #include "OTA_update.h"
+#include <ESP8266WebServer.h>
 
 ESP8266WebServer server(80);
 
 
 void HandleRoot()
 {
-  server.send(200, "text/html",
-  "<form action=\"/heater\" method=\"POST\">\
-    <input type=\"submit\" name=\"heater\" value=\"ON\">\
-    <input type=\"submit\" name=\"heater\" value=\"OFF\">\
-  </form>\
-  <br></br>\
-  <form action=\"/ota_update\" method=\"GET\">\
-    <input type=\"submit\" name=\"ota_update\" value=\"Update\">\
-  ");
+  server.send(200, "text/html", page);
 }
 
 

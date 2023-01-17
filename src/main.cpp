@@ -1,6 +1,7 @@
 #include "OTA_update.h"
 #include "secrets.h"
 #include "web_server.h"
+#include "web_socket.h"
 #include "wifi_manager.h"
 #include <Arduino.h>
 #include <ESP8266mDNS.h>
@@ -29,13 +30,23 @@ void setup()
   #ifdef DEBUG_HARD
     Serial.println("HTTP server started");
   #endif
+
+  StartWebSocket();
 }
 
-
+String str;
 void loop()
 {
   MDNS.update();
   ServerHandleClient();
+  WebSocketLoop();
+
+  // read text in Serial buffer and send to client
+  if(Serial.available() > 0)
+  {
+    str = Serial.readString();
+    WebSocketBroadcastTXT(str);
+  }
 
   #ifdef WIFI_UNUSED
     OTAUpdate();
