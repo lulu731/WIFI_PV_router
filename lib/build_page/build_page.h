@@ -35,9 +35,15 @@ char page[] PROGMEM = R"(
     wskt.onmessage = function(rx)
     {  // client receive message
       var obj = rx.data;
-      document.getElementById('rxText').value += obj;
+      var js = JSON.parse(obj);
+      document.getElementById('rxText').value +=
+        "InPower : " + js.realPower1.toFixed(0) + " W - " + "DivertedEnerg : " + js.divertedEnergy.toFixed(2) + " Wh\n"
+        + "realPower2 : " + js.realPower2.toFixed(0) + " W\n";
     };
   }
   </script>
   </body></html>
 )";
+
+// JSON example :
+// '{"realPower1": 200.0, "realPower2": -80.0, "divertedEnergy": 0.2}'

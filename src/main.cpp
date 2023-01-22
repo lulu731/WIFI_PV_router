@@ -4,6 +4,7 @@
 #include "web_socket.h"
 #include "wifi_manager.h"
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ESP8266mDNS.h>
 
 #define LOCAL_IP PVROUTER_IP
@@ -34,7 +35,9 @@ void setup()
   StartWebSocket();
 }
 
+StaticJsonDocument<512> doc;
 String str;
+float divertedEnergy = 0;
 void loop()
 {
   MDNS.update();
@@ -44,8 +47,20 @@ void loop()
   // read text in Serial buffer and send to client
   if(Serial.available() > 0)
   {
-    str = Serial.readString();
-    WebSocketBroadcastTXT(str);
+    DeserializationError error = deserializeJson(doc, Serial);
+    if (!error)
+    {
+      divertedEnergy += doc["divertedEnergy"].as<float>();
+      doc["divertedEnergy"] = divertedEnergy;
+      str.clear();
+      serializeJson(doc, str);
+      WebSocketBroadcastTXT(str);
+    }
+    else
+    {
+      str = "Error: deserializing from Wemos : " + String(error.c_str());
+      WebSocketBroadcastTXT(str);
+    }
   }
 
   #ifdef WIFI_UNUSED
