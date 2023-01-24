@@ -29,17 +29,17 @@ bool WIFI_MGR::Connect(const char* aSsid, const char* aPasswd)
   }
 
   #ifdef DEBUG_HARD
-    if (tryingNber == MAX_TRY)
+    if (tryingNber != MAX_TRY)
     {
       Serial.println("Connection established!");
       Serial.print("IP address:\t");
       Serial.println(WiFi.localIP());
     }
     else
-      Serial.print("Connection failed!");
+      Serial.println("Connection failed!");
   #endif
 
-  return !(tryingNber == MAX_TRY);
+  return (tryingNber != MAX_TRY);
 }
 
 

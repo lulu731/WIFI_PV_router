@@ -1,9 +1,9 @@
 #ifndef __OTA_UPDATE_H__
 #define __OTA_UPDATE_H__
 
-#include "web_server.h"
-
-void OtaUpdate();
-void HandleOtaUpdate();
+#include <ESP8266WebServer.h>
+void OTAUpdate();
+void OTAUpdate(ESP8266WebServer& aServer);
+void HandleOTAUpdate();
 
 #endif

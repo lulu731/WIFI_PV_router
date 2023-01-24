@@ -1,8 +1,13 @@
 #ifndef __WEB_SERVER_H__
 #define __WEB_SERVER_H__
 
-#include <ESP8266WebServer.h>
+// function prototypes for HTTP handlers
+void HandleRoot();
+void HandleHeaterCmd();
+void HandleUpdate();
+void HandleNotFound();
 
-extern ESP8266WebServer server;
+void StartWebserver();
+void ServerHandleClient();
 
 #endif
