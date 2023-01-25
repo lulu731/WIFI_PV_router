@@ -3,7 +3,8 @@
 
 // function prototypes for HTTP handlers
 void HandleRoot();
-void HandleHeaterCmd();
+void HandleHeaterCmd(const int);
+void HandleResetDivEnerg();
 void HandleUpdate();
 void HandleNotFound();
 
