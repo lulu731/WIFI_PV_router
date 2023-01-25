@@ -5,6 +5,7 @@
 
 ESP8266WebServer server(80);
 
+extern float divertedEnergy;
 
 void HandleRoot()
 {
@@ -12,29 +13,25 @@ void HandleRoot()
 }
 
 
-void HandleHeaterCmd()
+void HandleHeaterCmd(const int order)
 {
-  if (server.hasArg("heater"))
-  {
-    int order = 0;
-    if (server.arg("heater")=="ON") order = 1;
-    Serial.print(order);
-  }
-  server.sendHeader("Location", "/");
-  server.send(303);
+  Serial.print(order);
+}
+
+
+void HandleResetDivEnerg()
+{
+  divertedEnergy = 0;
 }
 
 
 void HandleUpdate()
 {
-  if (server.hasArg("ota_update") && server.arg("ota_update")=="Update")
+  OTAUpdate();
+  for (size_t i = 0; i < 1200; i++)
   {
-    OTAUpdate(server);
-    for (size_t i = 0; i < 1200; i++)
-    {
-      HandleOTAUpdate();
-      delay(100);
-    }
+    HandleOTAUpdate();
+    delay(100);
   }
 }
 
@@ -48,8 +45,8 @@ void HandleNotFound()
 void StartWebserver()
 {
   server.on("/", HandleRoot);
-  server.on("/heater", HTTP_POST, HandleHeaterCmd);
-  server.on("/ota_update", HandleUpdate);
+  //server.on("/heater", HTTP_POST, HandleHeaterCmd);
+  //server.on("/ota_update", HandleUpdate);
   server.onNotFound(HandleNotFound);
   server.begin();
 }
