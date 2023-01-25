@@ -1,11 +1,15 @@
+#include "OTA_update.h"
+#include "web_socket.h"
 #include <ArduinoOTA.h>
 #include <ESP8266WebServer.h>
-#include "OTA_update.h"
 
 
 void OTAUpdate() {
-  ArduinoOTA.onStart([]() {
+  WebSocketBroadcastTXT("Updating requested !\n");
+  WebSocketBroadcastTXT("IP address: " + WiFi.localIP().toString() + "\n");
 
+  ArduinoOTA.onStart([]() {
+    WebSocketBroadcastTXT("Starting OTA update\n");
   });
 
   ArduinoOTA.onEnd([]() {
@@ -13,24 +17,14 @@ void OTAUpdate() {
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-
+    WebSocketBroadcastTXT("OTA update progress: " + String(progress) + "/" + String(total) +"\n");
   });
 
   ArduinoOTA.onError([](ota_error_t error) {
-
+    WebSocketBroadcastTXT("OTA update error: " + String(error) +"\n");
   });
 
   ArduinoOTA.begin();
-}
-
-
-void OTAUpdate(ESP8266WebServer& aServer) {
-  aServer.setContentLength(10000);
-  aServer.send(200, "text/html", "Updating requested !");
-  aServer.sendContent("Ready");
-  aServer.sendContent("IP address: ");
-  aServer.sendContent(WiFi.localIP().toString());
-  OTAUpdate();
 }
 
 

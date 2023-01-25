@@ -1,5 +1,7 @@
 Release notes :
 
+v 1.2.0 : add button to reset Div Energy.
+
 v 1.1.0 : display incoming power, diverted energy and produced power.
 
 v 1.0.1 :
