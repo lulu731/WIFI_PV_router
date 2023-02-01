@@ -1,7 +1,5 @@
-#include "OTA_update.h"
 #include "secrets.h"
 #include "web_server.h"
-#include "web_socket.h"
 #include "wifi_manager.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -10,6 +8,7 @@
 #define LOCAL_IP PVROUTER_IP
 #define SERVER_NAME PVROUTER_NAME
 
+WEBSERVER WebServer;
 
 void setup()
 {
@@ -27,40 +26,35 @@ void setup()
     Serial.println(SERVER_NAME);
   #endif
 
-  StartWebserver();
+  WebServer.Start();
   #ifdef DEBUG_HARD
     Serial.println("HTTP server started");
   #endif
-
-  StartWebSocket();
 }
 
 StaticJsonDocument<512> doc;
 String str;
-float divertedEnergy = 0;
+
 void loop()
 {
   MDNS.update();
-  ServerHandleClient();
-  WebSocketLoop();
+  WebServer.HandleClient();
 
   // read text in Serial buffer and send to client
   if(Serial.available() > 0)
   {
     DeserializationError error = deserializeJson(doc, Serial);
-    if (!error)
+    if (error)
     {
-      divertedEnergy += doc["divertedEnergy"].as<float>();
-      doc["divertedEnergy"] = divertedEnergy;
-      str.clear();
-      serializeJson(doc, str);
-      WebSocketBroadcastTXT(str);
+      str = "Error: deserializing from Wemos : " + String(error.c_str());
     }
     else
     {
-      str = "Error: deserializing from Wemos : " + String(error.c_str());
-      WebSocketBroadcastTXT(str);
+      doc["divertedEnergy"] = WebServer.UpdateDivEnergy(doc["divertedEnergy"]);
+      str.clear();
+      serializeJson(doc, str);
     }
+    WebServer.BroadcastTXT(str);
   }
 
   #ifdef WIFI_UNUSED
