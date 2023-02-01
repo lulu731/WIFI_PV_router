@@ -56,16 +56,4 @@ void loop()
     }
     WebServer.BroadcastTXT(str);
   }
-
-  #ifdef WIFI_UNUSED
-    OTAUpdate();
-    // 2 min to update sketch
-    for (size_t i = 0; i < 1200; i++)
-    {
-      HandleOTAUpdate();
-      delay(100);
-    }
-    // no update go to sleep
-    ESP.deepSleep(0);
-  #endif
 }
