@@ -1,4 +1,4 @@
-#include "sun_events.h"
+#include "solar_events.h"
 #include <unity.h>
 #include <time.h>
 

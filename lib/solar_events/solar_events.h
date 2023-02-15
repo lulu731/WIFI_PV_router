@@ -1,5 +1,5 @@
-#ifndef _SUNEVENTS_H_
-#define _SUNEVENTS_H_
+#ifndef _SOLAR_EVENTS_H_
+#define _SOLAR_EVENTS_H_
 
 #include <ctime>
 
