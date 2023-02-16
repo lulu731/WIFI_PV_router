@@ -6,7 +6,7 @@
 class SUN_EVENT
 {
 public:
-  void GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSunset);
+  static void GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSunset);
 };
 
 #endif

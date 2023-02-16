@@ -8,12 +8,13 @@ class TIME_MGR
 {
 private:
   TIME_CLIENT_ITF* m_Time_Client;
+  time_t m_Sunrise, m_Sunset;
+  void GetNextSolarEvents();
 public:
   TIME_MGR(TIME_CLIENT_ITF& a_Time_Client);
   ~TIME_MGR();
   //void SetTime();
   time_t GetTime();
-  void GetNextSolarEvents();
   //void SetWakeUp();
   //void Sleep();
 };
