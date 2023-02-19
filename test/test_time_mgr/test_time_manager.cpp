@@ -2,7 +2,6 @@
 #include "ntp_time_itf.h"
 #include "solar_events_itf.h"
 #include <ArduinoFake.h>
-//#include <single_header/standalone/fakeit.hpp>
 #include <unity.h>
 
 using namespace fakeit;
@@ -72,36 +71,41 @@ time_t TimeAfterEvent(const int aSecondsToAdd, const time_t aEventTime)
   return aEventTime + aSecondsToAdd;
 }
 
-void test_handle_time_to_sunset_should_go_to_sleep()
-{
-  // SunSet and SunRise are initiated in Time_Manager constructor
-  When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-  PastSecondsFromNow(SunSet - Now);
-  Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
-}
 
-void test_handle_time_to_sunset_with_failure_should_go_to_sleep()
+class TEST_HANDLE_TIME_SLEEP
 {
-  When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-  PastSecondsFromNowWithFailure(TimeAfterEvent(5, SunSet) - Now, SunSet);
-  Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
-}
+public:
+  static void AtSunsetShouldGoToSleep()
+  {
+    // SunSet and SunRise are initiated in Time_Manager constructor
+    When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    PastSecondsFromNow(SunSet - Now);
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+  }
 
-void test_handle_time_after_sunset_should_call_sleep_once()
-{
-  When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-  PastSecondsFromNow(TimeAfterEvent(5, SunSet) - Now);
-  Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
-}
+  // Failure case: SunSet time is reached, but hardware failure is not able to call sleep command
+  static void AtSunsetHardwareFailureShouldGoToSleep()
+  {
+    When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    PastSecondsFromNowWithFailure(TimeAfterEvent(5, SunSet) - Now, SunSet);
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+  }
 
+  static void OverSunsetShouldCallSleepOnce()
+  {
+    When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    PastSecondsFromNow(TimeAfterEvent(5, SunSet) - Now);
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+  }
+};
 
 int main(int argc, char *argv[])
 {
   UNITY_BEGIN();
   RUN_TEST(test_get_epochtime);
-  RUN_TEST(test_handle_time_to_sunset_should_go_to_sleep);
-  RUN_TEST(test_handle_time_after_sunset_should_call_sleep_once);
-  RUN_TEST(test_handle_time_to_sunset_with_failure_should_go_to_sleep);
+  RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetShouldGoToSleep);
+  RUN_TEST(TEST_HANDLE_TIME_SLEEP::OverSunsetShouldCallSleepOnce);
+  RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetHardwareFailureShouldGoToSleep);
   UNITY_END();
 
   return 0;
