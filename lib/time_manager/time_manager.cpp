@@ -42,7 +42,8 @@ void TIME_MGR::GetNextSolarEvents()
 
 void TIME_MGR::HandleTime()
 {
-  if (m_Time_Client.GetEpochTime() >= m_Sunset) {
+  if (m_Time_Client.GetEpochTime() >= m_Sunset && !m_IsSleeping ) {
     Serial.print('9');
+    m_IsSleeping = true;
   }
 }
