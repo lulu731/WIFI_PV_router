@@ -8,6 +8,7 @@ using namespace fakeit;
 
 time_t Now = 1676306813;
 const time_t SunRise = 1676306820, SunSet = 1676306830;
+const time_t NextSunRise = SunRise + 10, NextSunSet = SunSet + 10;
 
 Mock<TIME_CLIENT_ITF> Time_Client_Mock;
 TIME_CLIENT_ITF* tc;
@@ -17,6 +18,18 @@ SUN_EVENTS_ITF* se;
 
 TIME_MGR* tm;
 
+std::array<time_t, 3> Args;
+void WhenCallMockGetNextEvents(const time_t& aNewTime,const time_t& aNewSunrise, const time_t& aNewSunset)
+{
+  When(Method(Solar_Events_Mock, GetNextEvents)).Do([&](const time_t& aTime, time_t& aSunrise, time_t& aSunset) {
+    aSunrise = aNewSunrise;
+    aSunset = aNewSunset;
+    Args[0] = aNewTime;;
+    Args[1] = aNewSunrise;
+    Args[2] = aNewSunset;
+  });
+}
+
 void setUp(void)
 {
   ArduinoFakeReset();
@@ -25,11 +38,10 @@ void setUp(void)
   tc = &Time_Client_Mock.get();
   se = &Solar_Events_Mock.get();
 
-  When(Method(Solar_Events_Mock, GetNextEvents)).Do([](const time_t& aTime, time_t& aSunrise, time_t& aSunset) {
-    aSunrise = SunRise;
-    aSunset = SunSet;
-  });
+  WhenCallMockGetNextEvents(Now, SunRise, SunSet);
   tm = new TIME_MGR(*tc, *se);
+  Solar_Events_Mock.ClearInvocationHistory();
+  Time_Client_Mock.ClearInvocationHistory();
 }
 
 void tearDown(void)
@@ -44,23 +56,22 @@ void test_get_epochtime()
   TEST_ASSERT_EQUAL(Now, aEpochTime);
 }
 
-void PastSecondsFromNow(const time_t aSeconds)
+void HandleTimeFromNow(const time_t aSeconds)
 {
   for (size_t Seconds = 1; Seconds < aSeconds + 1; Seconds++)
   {
-    When(Method(Time_Client_Mock, GetEpochTime)).Return(Now + Seconds);
-
+    When(Method(Time_Client_Mock, GetEpochTime)).AlwaysReturn(Now + Seconds);
     tm->HandleTime();
   };
 }
 
-void PastSecondsFromNowWithFailure(const time_t aSeconds, const time_t aEventSecond)
+void HandleTimeFromNowWithFailureAtEvent(const time_t aSeconds, const time_t aEventSecond)
 {
   // Hardware failure at event, preventing the sleep command to be called
   time_t FailingSecond = aEventSecond - Now;
   for (size_t Seconds = 1; Seconds < aSeconds + 1; Seconds++)
   {
-    When(Method(Time_Client_Mock, GetEpochTime)).Return(Now + Seconds);
+    When(Method(Time_Client_Mock, GetEpochTime)).AlwaysReturn(Now + Seconds);
     if (Seconds != FailingSecond)
       tm->HandleTime();
   };
@@ -79,34 +90,61 @@ public:
   {
     // SunSet and SunRise are initiated in Time_Manager constructor
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    PastSecondsFromNow(SunSet - Now);
+    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
+    HandleTimeFromNow(SunSet - Now);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+  }
+
+  static void AtSunsetShouldGetNewSolarEvents()
+  {
+    When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
+    HandleTimeFromNow(SunSet - Now);
+    std::array<time_t, 3> ExpectedArgs = {Now, NextSunRise, NextSunSet};
+    TEST_ASSERT_EQUAL_INT32_ARRAY(ExpectedArgs.data(), Args.data(), 3);
+    Verify(Method(Solar_Events_Mock, GetNextEvents) +
+      OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 
   // Failure case: SunSet time is reached, but hardware failure is not able to call sleep command
   static void AtSunsetHardwareFailureShouldGoToSleep()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    PastSecondsFromNowWithFailure(TimeAfterEvent(5, SunSet) - Now, SunSet);
+    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
+    HandleTimeFromNowWithFailureAtEvent(TimeAfterEvent(5, SunSet) - Now, SunSet);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 
   static void OverSunsetShouldCallSleepOnce()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    PastSecondsFromNow(TimeAfterEvent(5, SunSet) - Now);
+    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
+    HandleTimeFromNow(TimeAfterEvent(5, SunSet) - Now);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 };
+
+
+/*class TEST_HANDLE_TIME_WAKEUP
+{
+public:
+  static void AtSunriseShouldWakeup()
+  {
+    When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
+    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
+    HandleTimeFromNow(SunRise - Now);
+  }
+};*/
+
 
 int main(int argc, char *argv[])
 {
   UNITY_BEGIN();
   RUN_TEST(test_get_epochtime);
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetShouldGoToSleep);
+  RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetShouldGetNewSolarEvents);
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::OverSunsetShouldCallSleepOnce);
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetHardwareFailureShouldGoToSleep);
-  UNITY_END();
-
-  return 0;
+  return UNITY_END();
 }

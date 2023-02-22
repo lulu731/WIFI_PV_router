@@ -14,6 +14,7 @@ private:
   time_t m_Sunrise, m_Sunset;
   bool m_IsSleeping = false;
   void GetNextSolarEvents();
+
   //void ReadyWakeUp();
 public:
 #ifdef UNIT_TEST
