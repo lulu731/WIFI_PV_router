@@ -56,9 +56,9 @@ void test_get_epochtime()
   TEST_ASSERT_EQUAL(Now, aEpochTime);
 }
 
-void HandleTimeFromNow(const time_t aSeconds)
+void HandleTimeFromNowToEvent(const time_t aEvent)
 {
-  for (size_t Seconds = 1; Seconds < aSeconds + 1; Seconds++)
+  for (size_t Seconds = 1; Seconds < aEvent - Now + 1; Seconds++)
   {
     When(Method(Time_Client_Mock, GetEpochTime)).AlwaysReturn(Now + Seconds);
     tm->HandleTime();
@@ -77,11 +77,6 @@ void HandleTimeFromNowWithFailureAtEvent(const time_t aSeconds, const time_t aEv
   };
 }
 
-time_t TimeAfterEvent(const int aSecondsToAdd, const time_t aEventTime)
-{
-  return aEventTime + aSecondsToAdd;
-}
-
 
 class TEST_HANDLE_TIME_SLEEP
 {
@@ -91,7 +86,7 @@ public:
     // Sunset and Sunrise are initiated in Time_Manager constructor
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
-    HandleTimeFromNow(Sunset - Now);
+    HandleTimeFromNowToEvent(Sunset);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 
@@ -99,7 +94,7 @@ public:
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
-    HandleTimeFromNow(Sunset - Now);
+    HandleTimeFromNowToEvent(Sunset);
     std::array<time_t, 3> ExpectedArgs = {Now, NextSunrise, NextSunset};
     TEST_ASSERT_EQUAL_INT32_ARRAY(ExpectedArgs.data(), Args.data(), 3);
     Verify(Method(Solar_Events_Mock, GetNextEvents) +
@@ -119,7 +114,7 @@ public:
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
-    HandleTimeFromNow(Sunset + 5 - Now);
+    HandleTimeFromNowToEvent(Sunset + 5);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 };
@@ -133,7 +128,7 @@ public:
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
     WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
-    HandleTimeFromNow(NextSunrise - Now);
+    HandleTimeFromNowToEvent(NextSunrise);
     Verify(Method(ArduinoFake(), digitalWrite));
   }
 };
@@ -143,10 +138,13 @@ int main(int argc, char *argv[])
 {
   UNITY_BEGIN();
   RUN_TEST(test_get_epochtime);
+
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetShouldGoToSleep);
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetShouldGetNewSolarEvents);
-  RUN_TEST(TEST_HANDLE_TIME_SLEEP::OverSunsetShouldCallSleepOnce);
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetHardwareFailureShouldGoToSleep);
+  RUN_TEST(TEST_HANDLE_TIME_SLEEP::OverSunsetShouldCallSleepOnce);
+
   RUN_TEST(TEST_HANDLE_TIME_WAKEUP::AtSunriseShouldWakeup);
+
   return UNITY_END();
 }
