@@ -7,8 +7,8 @@
 using namespace fakeit;
 
 time_t Now = 1676306813;
-const time_t SunRise = 1676306820, SunSet = 1676306830;
-const time_t NextSunRise = SunRise + 10, NextSunSet = SunSet + 10;
+const time_t Sunrise = 1676306820, Sunset = Sunrise + 10;
+const time_t NextSunrise = Sunset + 30, NextSunset = NextSunrise + 10;
 
 Mock<TIME_CLIENT_ITF> Time_Client_Mock;
 TIME_CLIENT_ITF* tc;
@@ -38,7 +38,7 @@ void setUp(void)
   tc = &Time_Client_Mock.get();
   se = &Solar_Events_Mock.get();
 
-  WhenCallMockGetNextEvents(Now, SunRise, SunSet);
+  WhenCallMockGetNextEvents(Now, Sunrise, Sunset);
   tm = new TIME_MGR(*tc, *se);
   Solar_Events_Mock.ClearInvocationHistory();
   Time_Client_Mock.ClearInvocationHistory();
@@ -88,54 +88,55 @@ class TEST_HANDLE_TIME_SLEEP
 public:
   static void AtSunsetShouldGoToSleep()
   {
-    // SunSet and SunRise are initiated in Time_Manager constructor
+    // Sunset and Sunrise are initiated in Time_Manager constructor
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
-    HandleTimeFromNow(SunSet - Now);
+    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    HandleTimeFromNow(Sunset - Now);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 
   static void AtSunsetShouldGetNewSolarEvents()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
-    HandleTimeFromNow(SunSet - Now);
-    std::array<time_t, 3> ExpectedArgs = {Now, NextSunRise, NextSunSet};
+    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    HandleTimeFromNow(Sunset - Now);
+    std::array<time_t, 3> ExpectedArgs = {Now, NextSunrise, NextSunset};
     TEST_ASSERT_EQUAL_INT32_ARRAY(ExpectedArgs.data(), Args.data(), 3);
     Verify(Method(Solar_Events_Mock, GetNextEvents) +
       OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 
-  // Failure case: SunSet time is reached, but hardware failure is not able to call sleep command
+  // Failure case: Sunset time is reached, but hardware failure is not able to call sleep command
   static void AtSunsetHardwareFailureShouldGoToSleep()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
-    HandleTimeFromNowWithFailureAtEvent(TimeAfterEvent(5, SunSet) - Now, SunSet);
+    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    HandleTimeFromNowWithFailureAtEvent(Sunset + 2 - Now, Sunset);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 
   static void OverSunsetShouldCallSleepOnce()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
-    HandleTimeFromNow(TimeAfterEvent(5, SunSet) - Now);
+    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    HandleTimeFromNow(Sunset + 5 - Now);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 };
 
 
-/*class TEST_HANDLE_TIME_WAKEUP
+class TEST_HANDLE_TIME_WAKEUP
 {
 public:
   static void AtSunriseShouldWakeup()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunRise, NextSunSet);
-    HandleTimeFromNow(SunRise - Now);
+    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    HandleTimeFromNow(NextSunrise - Now);
+    Verify(Method(ArduinoFake(), digitalWrite));
   }
-};*/
+};
 
 
 int main(int argc, char *argv[])
@@ -146,5 +147,6 @@ int main(int argc, char *argv[])
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetShouldGetNewSolarEvents);
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::OverSunsetShouldCallSleepOnce);
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetHardwareFailureShouldGoToSleep);
+  RUN_TEST(TEST_HANDLE_TIME_WAKEUP::AtSunriseShouldWakeup);
   return UNITY_END();
 }

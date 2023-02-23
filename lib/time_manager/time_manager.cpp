@@ -47,4 +47,11 @@ void TIME_MGR::HandleTime()
     Serial.print('9');
     m_IsSleeping = true;
   }
+  else
+  {
+    if (m_Time_Client.GetEpochTime() >= m_Sunrise && m_IsSleeping ) {
+      digitalWrite(12, HIGH);
+      m_IsSleeping = false;
+    }
+  }
 }
