@@ -21,12 +21,20 @@ TIME_MGR* tm;
 std::array<time_t, 3> Args;
 void WhenCallMockGetNextEvents(const time_t& aNewTime,const time_t& aNewSunrise, const time_t& aNewSunset)
 {
-  When(Method(Solar_Events_Mock, GetNextEvents)).Do([&](const time_t& aTime, time_t& aSunrise, time_t& aSunset) {
-    aSunrise = aNewSunrise;
-    aSunset = aNewSunset;
-    Args[0] = aNewTime;;
-    Args[1] = aNewSunrise;
-    Args[2] = aNewSunset;
+  When(Method(Solar_Events_Mock, GetNextEvents)).AlwaysDo([&](const time_t& aTime, time_t& aSunrise, time_t& aSunset)
+  {
+    if (aTime == NextSunset) {
+      aSunrise = NextSunset + 30;
+      aSunset = NextSunset + 40;
+    }
+    else
+    {
+      aSunrise = aNewSunrise;
+      aSunset = aNewSunset;
+      Args[0] = aNewTime;;
+      Args[1] = aNewSunrise;
+      Args[2] = aNewSunset;
+    }
   });
 }
 
@@ -85,7 +93,8 @@ public:
   {
     // Sunset and Sunrise are initiated in Time_Manager constructor
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
+    WhenCallMockGetNextEvents(Sunset, NextSunrise, NextSunset);
     HandleTimeFromNowToEvent(Sunset);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
@@ -93,9 +102,10 @@ public:
   static void AtSunsetShouldGetNewSolarEvents()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
+    WhenCallMockGetNextEvents(Sunset, NextSunrise, NextSunset);
     HandleTimeFromNowToEvent(Sunset);
-    std::array<time_t, 3> ExpectedArgs = {Now, NextSunrise, NextSunset};
+    std::array<time_t, 3> ExpectedArgs = {Sunset, NextSunrise, NextSunset};
     TEST_ASSERT_EQUAL_INT32_ARRAY(ExpectedArgs.data(), Args.data(), 3);
     Verify(Method(Solar_Events_Mock, GetNextEvents) +
       OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
@@ -105,6 +115,7 @@ public:
   static void AtSunsetHardwareFailureShouldGoToSleep()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
     WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
     HandleTimeFromNowWithFailureAtEvent(Sunset + 2 - Now, Sunset);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
@@ -113,9 +124,22 @@ public:
   static void OverSunsetShouldCallSleepOnce()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
     WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
     HandleTimeFromNowToEvent(Sunset + 5);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+  }
+
+  static void FromNowToNextSunset()
+  {
+    When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
+    When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
+    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    HandleTimeFromNowToEvent(NextSunset);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Twice();
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Once();
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Twice();
   }
 };
 
@@ -126,6 +150,7 @@ public:
   static void AtSunriseShouldWakeup()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
+    When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
     WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
     HandleTimeFromNowToEvent(NextSunrise);
@@ -145,6 +170,8 @@ int main(int argc, char *argv[])
   RUN_TEST(TEST_HANDLE_TIME_SLEEP::OverSunsetShouldCallSleepOnce);
 
   RUN_TEST(TEST_HANDLE_TIME_WAKEUP::AtSunriseShouldWakeup);
+
+  RUN_TEST(TEST_HANDLE_TIME_SLEEP::FromNowToNextSunset);
 
   return UNITY_END();
 }
