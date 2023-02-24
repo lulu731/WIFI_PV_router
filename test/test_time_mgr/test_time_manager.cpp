@@ -6,9 +6,9 @@
 
 using namespace fakeit;
 
+const int Daylight = 10, DayDuration = 40, Night = 30;
 time_t Now = 1676306813;
-const time_t Sunrise = 1676306820, Sunset = Sunrise + 10;
-const time_t NextSunrise = Sunset + 30, NextSunset = NextSunrise + 10;
+const time_t Sunrise = 1676306820, Sunset = Sunrise + Daylight;
 
 Mock<TIME_CLIENT_ITF> Time_Client_Mock;
 TIME_CLIENT_ITF* tc;
@@ -19,21 +19,22 @@ SUN_EVENTS_ITF* se;
 TIME_MGR* tm;
 
 std::array<time_t, 3> Args;
-void WhenCallMockGetNextEvents(const time_t& aNewTime,const time_t& aNewSunrise, const time_t& aNewSunset)
+void WhenCallMockGetNextEvents()
 {
   When(Method(Solar_Events_Mock, GetNextEvents)).AlwaysDo([&](const time_t& aTime, time_t& aSunrise, time_t& aSunset)
   {
-    if (aTime == NextSunset) {
-      aSunrise = NextSunset + 30;
-      aSunset = NextSunset + 40;
+    if (aTime == Now)
+    {
+      aSunrise = Sunrise;
+      aSunset = Sunset;
     }
     else
     {
-      aSunrise = aNewSunrise;
-      aSunset = aNewSunset;
-      Args[0] = aNewTime;;
-      Args[1] = aNewSunrise;
-      Args[2] = aNewSunset;
+      aSunrise = aTime + Night;
+      aSunset = aTime + DayDuration;
+      Args[0] = aTime;
+      Args[1] = aSunrise;
+      Args[2] = aSunset;
     }
   });
 }
@@ -46,7 +47,7 @@ void setUp(void)
   tc = &Time_Client_Mock.get();
   se = &Solar_Events_Mock.get();
 
-  WhenCallMockGetNextEvents(Now, Sunrise, Sunset);
+  WhenCallMockGetNextEvents();
   tm = new TIME_MGR(*tc, *se);
   Solar_Events_Mock.ClearInvocationHistory();
   Time_Client_Mock.ClearInvocationHistory();
@@ -94,7 +95,7 @@ public:
     // Sunset and Sunrise are initiated in Time_Manager constructor
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
-    WhenCallMockGetNextEvents(Sunset, NextSunrise, NextSunset);
+    WhenCallMockGetNextEvents();
     HandleTimeFromNowToEvent(Sunset);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
@@ -103,9 +104,9 @@ public:
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
-    WhenCallMockGetNextEvents(Sunset, NextSunrise, NextSunset);
+    WhenCallMockGetNextEvents();
     HandleTimeFromNowToEvent(Sunset);
-    std::array<time_t, 3> ExpectedArgs = {Sunset, NextSunrise, NextSunset};
+    std::array<time_t, 3> ExpectedArgs = {Sunset, Sunset + Night, Sunset + DayDuration};
     TEST_ASSERT_EQUAL_INT32_ARRAY(ExpectedArgs.data(), Args.data(), 3);
     Verify(Method(Solar_Events_Mock, GetNextEvents) +
       OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
@@ -116,7 +117,7 @@ public:
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    WhenCallMockGetNextEvents();
     HandleTimeFromNowWithFailureAtEvent(Sunset + 2 - Now, Sunset);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
@@ -125,21 +126,22 @@ public:
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
+    WhenCallMockGetNextEvents();
     HandleTimeFromNowToEvent(Sunset + 5);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 
   static void FromNowToNextSunset()
   {
+    int NbreDays = 8;
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
-    HandleTimeFromNowToEvent(NextSunset);
-    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Twice();
-    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Once();
-    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Twice();
+    WhenCallMockGetNextEvents();
+    HandleTimeFromNowToEvent(Sunset + NbreDays*DayDuration + 5);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Exactly(NbreDays+1);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Exactly(NbreDays);
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Exactly(NbreDays+1);
   }
 };
 
@@ -152,8 +154,8 @@ public:
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
     When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
-    WhenCallMockGetNextEvents(Now, NextSunrise, NextSunset);
-    HandleTimeFromNowToEvent(NextSunrise);
+    WhenCallMockGetNextEvents();
+    HandleTimeFromNowToEvent(Sunset + Night);
     Verify(Method(ArduinoFake(), digitalWrite));
   }
 };
