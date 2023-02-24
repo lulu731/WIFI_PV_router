@@ -87,7 +87,7 @@ void HandleTimeFromNowWithFailureAtEvent(const time_t aSeconds, const time_t aEv
 }
 
 
-class TEST_HANDLE_TIME_SLEEP
+class TEST_HANDLE_TIME
 {
 public:
   static void AtSunsetShouldGoToSleep()
@@ -143,12 +143,7 @@ public:
     Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Exactly(NbreDays);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Exactly(NbreDays+1);
   }
-};
 
-
-class TEST_HANDLE_TIME_WAKEUP
-{
-public:
   static void AtSunriseShouldWakeup()
   {
     When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
@@ -166,14 +161,14 @@ int main(int argc, char *argv[])
   UNITY_BEGIN();
   RUN_TEST(test_get_epochtime);
 
-  RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetShouldGoToSleep);
-  RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetShouldGetNewSolarEvents);
-  RUN_TEST(TEST_HANDLE_TIME_SLEEP::AtSunsetHardwareFailureShouldGoToSleep);
-  RUN_TEST(TEST_HANDLE_TIME_SLEEP::OverSunsetShouldCallSleepOnce);
+  RUN_TEST(TEST_HANDLE_TIME::AtSunsetShouldGoToSleep);
+  RUN_TEST(TEST_HANDLE_TIME::AtSunsetShouldGetNewSolarEvents);
+  RUN_TEST(TEST_HANDLE_TIME::AtSunsetHardwareFailureShouldGoToSleep);
+  RUN_TEST(TEST_HANDLE_TIME::OverSunsetShouldCallSleepOnce);
 
-  RUN_TEST(TEST_HANDLE_TIME_WAKEUP::AtSunriseShouldWakeup);
+  RUN_TEST(TEST_HANDLE_TIME::AtSunriseShouldWakeup);
 
-  RUN_TEST(TEST_HANDLE_TIME_SLEEP::FromNowToNextSunset);
+  RUN_TEST(TEST_HANDLE_TIME::FromNowToNextSunset);
 
   return UNITY_END();
 }
