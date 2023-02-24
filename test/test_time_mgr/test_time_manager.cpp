@@ -43,7 +43,7 @@ void setUp(void)
 {
   ArduinoFakeReset();
   Method(Time_Client_Mock, Init) = true;
-  When(Method(Time_Client_Mock, GetEpochTime)).Return(Now);
+  When(Method(Time_Client_Mock, GetEpochTime)).AlwaysReturn(Now);
   tc = &Time_Client_Mock.get();
   se = &Solar_Events_Mock.get();
 
@@ -156,6 +156,17 @@ public:
 };
 
 
+class TEST_SLEEPING_PARAM
+{
+public:
+  static void TestInitDaylightSleepingParam()
+  {
+    Now = Sunset - DayDuration - 5;
+    TEST_HANDLE_TIME::FromNowToNextSunset();
+  }
+};
+
+
 int main(int argc, char *argv[])
 {
   UNITY_BEGIN();
@@ -169,6 +180,8 @@ int main(int argc, char *argv[])
   RUN_TEST(TEST_HANDLE_TIME::AtSunriseShouldWakeup);
 
   RUN_TEST(TEST_HANDLE_TIME::FromNowToNextSunset);
+
+  RUN_TEST(TEST_SLEEPING_PARAM::TestInitDaylightSleepingParam);
 
   return UNITY_END();
 }

@@ -13,6 +13,13 @@
   {
     m_Time_Client.Init();
     m_Solar_Events.GetNextEvents(m_Time_Client.GetEpochTime(), m_Sunrise, m_Sunset);
+    if (m_Time_Client.GetEpochTime() < m_Sunset - 40)
+    {
+      m_IsSleeping = true;
+      m_Sunset -= 40;
+    }
+    else
+      m_IsSleeping = false;
   }
 #else
   // TODO : add constructor

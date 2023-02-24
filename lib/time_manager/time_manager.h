@@ -12,7 +12,7 @@ private:
   TIME_CLIENT_ITF& m_Time_Client;
   SUN_EVENTS_ITF& m_Solar_Events;
   time_t m_Sunrise, m_Sunset;
-  bool m_IsSleeping = false;
+  bool m_IsSleeping;
   void GetNextSolarEvents();
 
   //void ReadyWakeUp();
