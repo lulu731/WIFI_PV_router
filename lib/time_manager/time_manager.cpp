@@ -1,55 +1,54 @@
 #include "time_manager.h"
 #include "solar_events.h"
+#include <Arduino.h>
 
-#ifdef UNIT_TEST
-  #include <ArduinoFake.h>
-#else
-  #include <Arduino.h>
+#ifndef UNIT_TEST
+  #include "ntp_time.h"
 #endif
 
-#ifdef UNIT_TEST
-  TIME_MGR::TIME_MGR(TIME_CLIENT_ITF& a_Time_Client, SUN_EVENTS_ITF& a_Solar_Events) :
+  TIME_MGR::TIME_MGR(TIME_CLIENT_ITF* a_Time_Client, SUN_EVENTS_ITF* a_Solar_Events, const int a_DayDuration) :
     m_Time_Client(a_Time_Client), m_Solar_Events(a_Solar_Events)
   {
-    m_Time_Client.Init();
-    m_Solar_Events.GetNextEvents(m_Time_Client.GetEpochTime(), m_Sunrise, m_Sunset);
-    if (m_Time_Client.GetEpochTime() < m_Sunset - 40)
+    m_Time_Client->Init();
+    m_Solar_Events->GetNextEvents(m_Time_Client->GetEpochTime(), m_Sunrise, m_Sunset);
+    if (m_Time_Client->GetEpochTime() < m_Sunset - a_DayDuration)
     {
       m_IsSleeping = true;
-      m_Sunset -= 40;
+      m_Sunset -= a_DayDuration;
     }
     else
       m_IsSleeping = false;
   }
-#else
-  // TODO : add constructor
-  /*TIME_MGR::TIME_MGR() :
-    m_Time_Client(), m_Solar_Events()
-  {
-    m_Time_Client.Init();
-  }*/
-#endif
 
-TIME_MGR::~TIME_MGR()
-{
-}
+#ifndef UNIT_TEST
+  TIME_MGR::TIME_MGR()
+  {
+    TIME_MGR(new TIME_CLIENT("194.158.119.97"), new SUN_EVENT);
+  }
+
+  TIME_MGR::~TIME_MGR()
+  {
+    delete m_Time_Client;
+    delete m_Solar_Events;
+  }
+#endif
 
 
 time_t TIME_MGR::GetTime()
 {
-  return m_Time_Client.GetEpochTime();
+  return m_Time_Client->GetEpochTime();
 }
 
 
 void TIME_MGR::GetNextSolarEvents()
 {
-  m_Solar_Events.GetNextEvents(m_Time_Client.GetEpochTime(), m_Sunrise, m_Sunset);
+  m_Solar_Events->GetNextEvents(m_Time_Client->GetEpochTime(), m_Sunrise, m_Sunset);
 }
 
 
 void TIME_MGR::HandleTime()
 {
-  if (m_Time_Client.GetEpochTime() >= m_Sunset && !m_IsSleeping ) {
+  if (m_Time_Client->GetEpochTime() >= m_Sunset && !m_IsSleeping) {
     GetNextSolarEvents();
     digitalWrite(12, LOW);
     Serial.print('9');
@@ -57,7 +56,7 @@ void TIME_MGR::HandleTime()
   }
   else
   {
-    if (m_Time_Client.GetEpochTime() >= m_Sunrise && m_IsSleeping ) {
+    if (m_Time_Client->GetEpochTime() >= m_Sunrise && m_IsSleeping) {
       digitalWrite(12, HIGH);
       m_IsSleeping = false;
     }

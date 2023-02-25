@@ -5,7 +5,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-class TIME_CLIENT : TIME_CLIENT_ITF
+class TIME_CLIENT : public TIME_CLIENT_ITF
 {
 public:
   TIME_CLIENT(const String&);

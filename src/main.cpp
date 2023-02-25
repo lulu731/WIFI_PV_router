@@ -1,7 +1,7 @@
 #include "secrets.h"
 #include "web_server.h"
 #include "wifi_manager.h"
-#include "ntp_time.h"
+#include "time_manager.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266mDNS.h>
@@ -36,11 +36,10 @@ void setup()
     Serial.println("HTTP server started");
   #endif
 
-  TIME_CLIENT TimeClient("194.158.119.97");
-  TimeClient.Init();
+  TIME_MGR TimeMgr;
   #ifdef DEBUG_HARD
     Serial.println("Time client started");
-    Serial.println(TimeClient.GetEpochTime());
+    Serial.println(TimeMgr.GetTime());
   #endif
 }
 

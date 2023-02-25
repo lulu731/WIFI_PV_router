@@ -48,7 +48,7 @@ void setUp(void)
   se = &Solar_Events_Mock.get();
 
   WhenCallMockGetNextEvents();
-  tm = new TIME_MGR(*tc, *se);
+  tm = new TIME_MGR(tc, se, DayDuration);
   Solar_Events_Mock.ClearInvocationHistory();
   Time_Client_Mock.ClearInvocationHistory();
 }
