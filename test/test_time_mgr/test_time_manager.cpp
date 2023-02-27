@@ -37,13 +37,13 @@ void WhenCallMockGetNextEvents()
   });
 }
 
-void InitMockCalls(const bool aCallDigitalWriteWithHigh = false)
+void InitMockCalls(const bool aCallDigitalWriteLow = false)
 {
   When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-  When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
+  When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
   WhenCallMockGetNextEvents();
-  if (aCallDigitalWriteWithHigh)
-    When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
+  if (aCallDigitalWriteLow)
+    When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
 }
 
 class TEST_TIME_MGR
@@ -123,8 +123,8 @@ public:
     int NbreDays = 8;
     InitMockCalls(true);
     HandleTimeFromNowToEvent(Sunset + NbreDays*DayDuration + 5);
-    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Exactly(NbreDays+1);
-    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Exactly(NbreDays);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Exactly(NbreDays+1);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Exactly(NbreDays);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Exactly(NbreDays+1);
   }
 

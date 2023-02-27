@@ -50,14 +50,14 @@ void TIME_MGR::HandleTime()
 {
   if (m_Time_Client->GetEpochTime() >= m_Sunset && !m_IsSleeping) {
     GetNextSolarEvents();
-    digitalWrite(12, LOW);
+    digitalWrite(12, HIGH);
     Serial.print('9');
     m_IsSleeping = true;
   }
   else
   {
     if (m_Time_Client->GetEpochTime() >= m_Sunrise && m_IsSleeping) {
-      digitalWrite(12, HIGH);
+      digitalWrite(12, LOW);
       m_IsSleeping = false;
     }
   }
