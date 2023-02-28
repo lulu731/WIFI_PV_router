@@ -27,7 +27,7 @@ public:
   ~TIME_MGR();
 #endif
   time_t GetTime();
-  void HandleTime();
+  bool HandleTime();
 
   //void Sleep();
 };

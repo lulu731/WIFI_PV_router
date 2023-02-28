@@ -46,19 +46,25 @@ void TIME_MGR::GetNextSolarEvents()
 }
 
 
-void TIME_MGR::HandleTime()
+bool TIME_MGR::HandleTime()
 {
-  if (m_Time_Client->GetEpochTime() >= m_Sunset && !m_IsSleeping) {
+  // Time crossing sunset => sleep
+  if (m_Time_Client->GetEpochTime() >= m_Sunset && !m_IsSleeping)
+  {
     GetNextSolarEvents();
     digitalWrite(12, HIGH);
-    Serial.print('9');
+    Serial.print('9'); // command to sleep device
     m_IsSleeping = true;
   }
   else
+  // Time crossing sunrise => wake up
   {
-    if (m_Time_Client->GetEpochTime() >= m_Sunrise && m_IsSleeping) {
-      digitalWrite(12, LOW);
+    if (m_Time_Client->GetEpochTime() >= m_Sunrise && m_IsSleeping)
+    {
+      digitalWrite(12, LOW); // wake up the device
       m_IsSleeping = false;
     }
   }
+
+  return m_IsSleeping;
 }

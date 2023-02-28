@@ -11,6 +11,8 @@
 #define SERVER_NAME PVROUTER_NAME
 
 WEBSERVER WebServer;
+TIME_MGR TimeMgr;
+
 String LastJson = "{\"realPower1\": 0.0, \"realPower2\": 0.0, \"divertedEnergy\": 0.0}";
 
 void setup()
@@ -36,7 +38,6 @@ void setup()
     Serial.println("HTTP server started");
   #endif
 
-  TIME_MGR TimeMgr;
   #ifdef DEBUG_HARD
     Serial.println("Time client started");
     Serial.println(TimeMgr.GetTime());
@@ -45,11 +46,20 @@ void setup()
 
 StaticJsonDocument<512> doc;
 String str;
+bool WasSleeping = false;
 
 void loop()
 {
   MDNS.update();
   WebServer.HandleClient();
+
+  bool IsSleeping = TimeMgr.HandleTime();
+  if (WasSleeping != IsSleeping)
+  {
+    WasSleeping = IsSleeping;
+    if (!IsSleeping)
+      WebServer.ResetDivEnergy();
+  }
 
   // read text in Serial buffer and send to client
   if(Serial.available() > 0)
