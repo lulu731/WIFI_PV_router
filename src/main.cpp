@@ -57,8 +57,17 @@ void loop()
   if (WasSleeping != IsSleeping)
   {
     WasSleeping = IsSleeping;
+    const time_t t = TimeMgr.GetTime();
+    String str = String(std::ctime(&t));
     if (!IsSleeping)
+    {
+      WebServer.BroadcastTXT("Waking up : " + str);
       WebServer.ResetDivEnergy();
+    }
+    else
+    {
+      WebServer.BroadcastTXT("Sleeping : " + str);
+    }
   }
 
   // read text in Serial buffer and send to client
