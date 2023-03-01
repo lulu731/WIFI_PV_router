@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266mDNS.h>
+#include <LittleFS.h>
 
 #define LOCAL_IP PVROUTER_IP
 #define SERVER_NAME PVROUTER_NAME
@@ -26,6 +27,8 @@ void setup()
     Serial.print("mDNS responder started: ");
     Serial.println(SERVER_NAME);
   #endif
+
+  LittleFS.begin();
 
   WebServer.Start();
   #ifdef DEBUG_HARD

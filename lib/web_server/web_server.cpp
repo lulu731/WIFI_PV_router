@@ -1,6 +1,6 @@
 #include "web_server.h"
-#include "build_page.h"
 #include "OTA_update.h"
+#include <LittleFS.h>
 
 WEBSERVER::WEBSERVER()
 {
@@ -19,7 +19,10 @@ WEBSERVER::~WEBSERVER() {
 void WEBSERVER::Start()
 {
   m_Server->on("/", HTTP_GET, [this]() {
-    m_Server->send(200, "text/html", page);
+    File file = LittleFS.open("/index.html", "r");
+    String str = file.readString();
+    file.close();
+    m_Server->send(200, "text/html", str);
   });
   m_Server->onNotFound([this]() {
     m_Server->send(404,  "text/plain", "404: Not found");
