@@ -16,13 +16,14 @@ WEBSERVER::~WEBSERVER() {
 }
 
 
-void WEBSERVER::Start()
+void WEBSERVER::Start(const String& aLastJson)
 {
-  m_Server->on("/", HTTP_GET, [this]() {
+  m_Server->on("/", HTTP_GET, [this, aLastJson]() {
     File file = LittleFS.open("/index.html", "r");
     String str = file.readString();
     file.close();
     m_Server->send(200, "text/html", str);
+    BroadcastTXT(aLastJson);
   });
   m_Server->onNotFound([this]() {
     m_Server->send(404,  "text/plain", "404: Not found");
@@ -93,6 +94,6 @@ void WEBSERVER::UpdateFirmware()
 }
 
 
-void WEBSERVER::BroadcastTXT(const String aStr) {
+void WEBSERVER::BroadcastTXT(const String& aStr) {
   m_WebSocketServer->broadcastTXT(aStr.c_str(), aStr.length());
 }

@@ -11,6 +11,7 @@
 #define SERVER_NAME PVROUTER_NAME
 
 WEBSERVER WebServer;
+String LastJson = "{\"realPower1\": 0.0, \"realPower2\": 0.0, \"divertedEnergy\": 0.0}";
 
 void setup()
 {
@@ -30,7 +31,7 @@ void setup()
 
   LittleFS.begin();
 
-  WebServer.Start();
+  WebServer.Start(LastJson);
   #ifdef DEBUG_HARD
     Serial.println("HTTP server started");
   #endif
@@ -62,8 +63,10 @@ void loop()
     else
     {
       doc["divertedEnergy"] = WebServer.UpdateDivEnergy(doc["divertedEnergy"]);
+      doc["isSleeping"] = true;
       str.clear();
       serializeJson(doc, str);
+      LastJson = str;
     }
     WebServer.BroadcastTXT(str);
   }
