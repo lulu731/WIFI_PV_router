@@ -37,19 +37,18 @@ void WhenCallMockGetNextEvents()
   });
 }
 
-void InitMockCalls(const bool aCallDigitalWriteLow = false)
+void InitMockCalls()
 {
   When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
   When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
   WhenCallMockGetNextEvents();
-  if (aCallDigitalWriteLow)
-    When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
+  When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
 }
 
 class TEST_TIME_MGR
 {
 private:
-  TIME_MGR* m_Time_Mgr = new TIME_MGR(tc, se, DayDuration);
+  TIME_MGR* m_Time_Mgr = new TIME_MGR(tc, se);
 
   void HandleTimeFromNowToEvent(const time_t aEvent)
   {
@@ -76,6 +75,11 @@ public:
   ~TEST_TIME_MGR()
   {
     delete m_Time_Mgr;
+  }
+
+  void Init()
+  {
+    m_Time_Mgr->Init(DayDuration);
   }
 
   void TestGetEpochtime()
@@ -121,16 +125,16 @@ public:
   void FromNowToNextSunset()
   {
     int NbreDays = 8;
-    InitMockCalls(true);
+    InitMockCalls();
     HandleTimeFromNowToEvent(Sunset + NbreDays*DayDuration + 5);
     Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Exactly(NbreDays+1);
-    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Exactly(NbreDays);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Exactly(NbreDays+1);
     Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Exactly(NbreDays+1);
   }
 
   void AtSunriseShouldWakeup()
   {
-    InitMockCalls(true);
+    InitMockCalls();
     HandleTimeFromNowToEvent(Sunset + Night);
     Verify(Method(ArduinoFake(), digitalWrite));
   }
@@ -154,6 +158,7 @@ void setUp(void)
 
   WhenCallMockGetNextEvents();
   TestTimeMgr = new TEST_TIME_MGR();
+  TestTimeMgr->Init();
   Solar_Events_Mock.ClearInvocationHistory();
   Time_Client_Mock.ClearInvocationHistory();
 }

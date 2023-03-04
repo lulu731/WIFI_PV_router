@@ -6,18 +6,9 @@
   #include "ntp_time.h"
 #endif
 
-  TIME_MGR::TIME_MGR(TIME_CLIENT_ITF* a_Time_Client, SUN_EVENTS_ITF* a_Solar_Events, const int a_DayDuration) :
+  TIME_MGR::TIME_MGR(TIME_CLIENT_ITF* a_Time_Client, SUN_EVENTS_ITF* a_Solar_Events) :
     m_Time_Client(a_Time_Client), m_Solar_Events(a_Solar_Events)
   {
-    m_Time_Client->Init();
-    m_Solar_Events->GetNextEvents(m_Time_Client->GetEpochTime(), m_Sunrise, m_Sunset);
-    if (m_Time_Client->GetEpochTime() < m_Sunset - a_DayDuration)
-    {
-      m_IsSleeping = true;
-      m_Sunset -= a_DayDuration;
-    }
-    else
-      m_IsSleeping = false;
   }
 
 #ifndef UNIT_TEST
@@ -32,6 +23,18 @@
     delete m_Solar_Events;
   }
 #endif
+
+
+void TIME_MGR::Init(const int a_DayDuration)
+{
+  m_Time_Client->Init();
+  m_Solar_Events->GetNextEvents(m_Time_Client->GetEpochTime(), m_Sunrise, m_Sunset);
+  if (m_Time_Client->GetEpochTime() < m_Sunset - a_DayDuration)
+  {
+    m_IsSleeping = false;
+    m_Sunset -= a_DayDuration;
+  }
+}
 
 
 time_t TIME_MGR::GetTime()
