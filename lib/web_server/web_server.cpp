@@ -97,6 +97,7 @@ void WEBSERVER::UpdateFirmware()
     HandleOTAUpdate();
     delay(100);
   }
+  EndOTAUpdate(); //No update processed after two minutes
 }
 
 

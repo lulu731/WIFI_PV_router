@@ -5,5 +5,6 @@
 
 void OTAUpdate(WEBSERVER*);
 void HandleOTAUpdate();
+void EndOTAUpdate();
 
 #endif

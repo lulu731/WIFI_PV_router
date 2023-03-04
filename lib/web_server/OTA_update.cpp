@@ -30,3 +30,8 @@ void HandleOTAUpdate()
 {
   ArduinoOTA.handle();
 }
+
+
+void EndOTAUpdate() {
+  ArduinoOTA.end();
+}
