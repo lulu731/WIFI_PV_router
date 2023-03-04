@@ -14,7 +14,8 @@
 #ifndef UNIT_TEST
   TIME_MGR::TIME_MGR()
   {
-    TIME_MGR(new TIME_CLIENT("194.158.119.97"), new SUN_EVENT);
+    m_Time_Client = new TIME_CLIENT("194.158.119.97");
+    m_Solar_Events = new SUN_EVENT();
   }
 
   TIME_MGR::~TIME_MGR()
