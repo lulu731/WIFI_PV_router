@@ -34,7 +34,7 @@ void WEBSERVER::Start(const String& aLastJson)
   m_WebSocketServer->onEvent([this, aLastJson](uint8_t num, WStype_t type, uint8_t * message, size_t length)
   {
     switch (type) {
-      case WStype_DISCONNECTED:
+      case WStype_CONNECTED:
         BroadcastTXT(aLastJson);
         break;
       case WStype_TEXT :
