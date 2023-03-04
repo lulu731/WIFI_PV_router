@@ -8,7 +8,7 @@ class WEBSERVER {
 public:
   WEBSERVER();
   ~WEBSERVER();
-  void Start(const String& aLastJson);
+  void Start(const String* aLastJson);
   void HandleClient();
   void ResetDivEnergy();
   float UpdateDivEnergy(float);

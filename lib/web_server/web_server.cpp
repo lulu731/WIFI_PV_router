@@ -16,7 +16,7 @@ WEBSERVER::~WEBSERVER() {
 }
 
 
-void WEBSERVER::Start(const String& aLastJson)
+void WEBSERVER::Start(const String* aLastJson)
 {
   m_Server->on("/", HTTP_GET, [this]() {
     File file = LittleFS.open("/index.html", "r");
@@ -35,7 +35,7 @@ void WEBSERVER::Start(const String& aLastJson)
   {
     switch (type) {
       case WStype_CONNECTED:
-        BroadcastTXT(aLastJson);
+        BroadcastTXT(*aLastJson);
         break;
       case WStype_TEXT :
       {

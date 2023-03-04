@@ -33,11 +33,12 @@ void setup()
 
   LittleFS.begin();
 
-  WebServer.Start(LastJson);
+  WebServer.Start(&LastJson);
   #ifdef DEBUG_HARD
     Serial.println("HTTP server started");
   #endif
 
+  TimeMgr.Init();
   #ifdef DEBUG_HARD
     Serial.println("Time client started");
     Serial.println(TimeMgr.GetTime());
@@ -52,8 +53,8 @@ void loop()
 {
   MDNS.update();
   WebServer.HandleClient();
-
   bool IsSleeping = TimeMgr.HandleTime();
+
   if (WasSleeping != IsSleeping)
   {
     WasSleeping = IsSleeping;
@@ -81,7 +82,7 @@ void loop()
     else
     {
       doc["divertedEnergy"] = WebServer.UpdateDivEnergy(doc["divertedEnergy"]);
-      doc["isSleeping"] = true;
+      doc["isSleeping"] = WasSleeping;
       str.clear();
       serializeJson(doc, str);
       LastJson = str;
