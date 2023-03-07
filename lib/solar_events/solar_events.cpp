@@ -6,24 +6,32 @@
 
 void SUN_EVENT::GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSunset)
 {
+  const int SECONDS_PER_DAY = 24 * 60 * 60;
   SunSet Sun;
   double latitude = LAT;
   double longitude = LONG;
 
   Sun.setPosition(latitude, longitude, 0);
 
-  tm* timeinfo = gmtime(&aTime);
-  timeinfo->tm_mday += 1;
-  timeinfo->tm_min = 0;
-  timeinfo->tm_sec = 0;
-  Sun.setCurrentDate(timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday);
+  tm* timeInfo = gmtime(&aTime);
+  timeInfo->tm_sec = 0;
+
+  Sun.setCurrentDate(timeInfo->tm_year + 1900, timeInfo->tm_mon + 1, timeInfo->tm_mday);
   int totalMinutes = Sun.calcSunrise();
-  timeinfo->tm_hour = totalMinutes / 60;
-  timeinfo->tm_min = totalMinutes % 60;
-  aSunrise = mktime(timeinfo);
+  timeInfo->tm_hour = totalMinutes / 60;
+  timeInfo->tm_min = totalMinutes % 60;
+  aSunrise = mktime(timeInfo);
+  if (aSunrise < aTime)
+  {
+    aSunrise += SECONDS_PER_DAY;
+  }
 
   totalMinutes = Sun.calcSunset();
-  timeinfo->tm_hour = totalMinutes / 60;
-  timeinfo->tm_min = totalMinutes % 60;
-  aSunset = mktime(timeinfo);
+  timeInfo->tm_hour = totalMinutes / 60;
+  timeInfo->tm_min = totalMinutes % 60;
+  aSunset = mktime(timeInfo);
+  if (aSunset < aTime)
+  {
+    aSunset += SECONDS_PER_DAY;
+  }
 }

@@ -2,42 +2,67 @@
 #include <unity.h>
 #include <time.h>
 
+tm TimeInfo;
+time_t sunrise, sunset;
+SUN_EVENT SunEvent;
+
 void setUp(void)
 {
-  //SUN_EVENT SunEvent;
+  TimeInfo.tm_year = 2023 - 1900;
+  TimeInfo.tm_mon = 2 - 1;
+  TimeInfo.tm_mday = 10;
+  // TimeInfo.tm_hour defined in each test
+  TimeInfo.tm_min = 0;
+  TimeInfo.tm_sec = 0;
+  TimeInfo.tm_isdst = 0;
+  sunrise = 0;
+  sunset = 0;
 }
 
-
-void tearDown(void)
+void GetNextSunriseSunsetFromNoon()
 {
-  // Nothing to do.
+  TimeInfo.tm_hour = 12;
+  time_t now = mktime(&TimeInfo);
+
+  SunEvent.GetNextEvents(now, sunrise, sunset);
+  //Test next solar events verify : now < sunset < sunrise
+  TEST_ASSERT_GREATER_THAN_UINT32(now, sunset);
+  TEST_ASSERT_GREATER_THAN_UINT32(sunset, sunrise);
+  TEST_ASSERT_UINT32_WITHIN(12*3600, now, sunset);
+  TEST_ASSERT_UINT32_WITHIN(24*3600, now, sunrise);
 }
 
-void test_get_next_sunrise_sunset()
+void GetNextSunriseSunsetFromOneOClock()
 {
-  tm timeinfo;
-  timeinfo.tm_year = 2023 - 1900;
-  timeinfo.tm_mon = 2 - 1;
-  timeinfo.tm_mday = 10;
-  timeinfo.tm_hour = 17;
-  timeinfo.tm_min = 0;
-  timeinfo.tm_sec = 0;
-  timeinfo.tm_isdst = 0;
+  TimeInfo.tm_hour = 1;
+  time_t now = mktime(&TimeInfo);
 
-  time_t now = mktime(&timeinfo);
-  time_t sunrise, sunset;
-  SUN_EVENT SunEvent;
   SunEvent.GetNextEvents(now, sunrise, sunset);
   //Test next solar events verify : now < sunrise < sunset
   TEST_ASSERT_GREATER_THAN_UINT32(now, sunrise);
   TEST_ASSERT_GREATER_THAN_UINT32(sunrise, sunset);
-  TEST_ASSERT_UINT32_WITHIN(24*3600, now, sunrise);
-  TEST_ASSERT_UINT32_WITHIN(24*3600, sunrise, sunset);
+  TEST_ASSERT_UINT32_WITHIN(12*3600, now, sunrise);
+  TEST_ASSERT_UINT32_WITHIN(12*3600, sunrise, sunset);
+}
+
+void GetNextSunriseSunsetFrom22OClock()
+{
+  TimeInfo.tm_hour = 22;
+  time_t now = mktime(&TimeInfo);
+
+  SunEvent.GetNextEvents(now, sunrise, sunset);
+  //Test next solar events verify : now < sunrise < sunset
+  TEST_ASSERT_GREATER_THAN_UINT32(now, sunrise);
+  TEST_ASSERT_GREATER_THAN_UINT32(sunrise, sunset);
+  TEST_ASSERT_UINT32_WITHIN(12*3600, now, sunrise);
+  TEST_ASSERT_UINT32_WITHIN(12*3600, sunrise, sunset);
 }
 
 int main(int argc, char *argv[])
 {
   UNITY_BEGIN();
-  RUN_TEST(test_get_next_sunrise_sunset);
+  RUN_TEST(GetNextSunriseSunsetFromNoon);
+  RUN_TEST(GetNextSunriseSunsetFromOneOClock);
+  RUN_TEST(GetNextSunriseSunsetFrom22OClock);
   UNITY_END();
 }
