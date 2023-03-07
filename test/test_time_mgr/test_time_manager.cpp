@@ -7,8 +7,7 @@
 using namespace fakeit;
 
 const int Daylight = 10, DayDuration = 40, Night = 30;
-time_t Now = 1676306813;
-const time_t Sunrise = 1676306820, Sunset = Sunrise + Daylight;
+time_t Now, Sunrise, Sunset;
 
 Mock<TIME_CLIENT_ITF> Time_Client_Mock;
 TIME_CLIENT_ITF* tc;
@@ -26,7 +25,7 @@ void WhenCallMockGetNextEvents()
       aSunrise = Sunrise;
       aSunset = Sunset;
     }
-    else
+    else // GetNextEvents is called at sunset
     {
       aSunrise = aTime + Night;
       aSunset = aTime + DayDuration;
@@ -39,9 +38,9 @@ void WhenCallMockGetNextEvents()
 
 void InitMockCalls()
 {
+  WhenCallMockGetNextEvents();
   When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
   When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
-  WhenCallMockGetNextEvents();
   When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
 }
 
@@ -91,58 +90,83 @@ public:
 
   void AtSunsetShouldGoToSleep()
   {
-    // Sunset and Sunrise are initiated in Time_Manager constructor
-    InitMockCalls();
+    Init();
     HandleTimeFromNowToEvent(Sunset);
-    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Twice();
   }
 
   void AtSunsetShouldGetNewSolarEvents()
   {
-    InitMockCalls();
+    Init();
     HandleTimeFromNowToEvent(Sunset);
     std::array<time_t, 3> ExpectedArgs = {Sunset, Sunset + Night, Sunset + DayDuration};
     TEST_ASSERT_EQUAL_INT32_ARRAY(ExpectedArgs.data(), Args.data(), 3);
     Verify(Method(Solar_Events_Mock, GetNextEvents) +
-      OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+      OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Twice();
   }
 
   // Failure case: Sunset time is reached, but hardware failure is not able to call sleep command
   void AtSunsetHardwareFailureShouldGoToSleep()
   {
-    InitMockCalls();
+    Init();
     HandleTimeFromNowWithFailureAtEvent(Sunset + 2 - Now, Sunset);
-    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Twice(); // sleep command is called at init() and sunset
   }
 
-  void OverSunsetShouldCallSleepOnce()
+  void OverSunsetShouldCallSleepTwice()
   {
-    InitMockCalls();
+    Init();
     HandleTimeFromNowToEvent(Sunset + 5);
-    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
-  }
-
-  void FromNowToNextSunset()
-  {
-    int NbreDays = 8;
-    InitMockCalls();
-    HandleTimeFromNowToEvent(Sunset + NbreDays*DayDuration + 5);
-    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Exactly(NbreDays+1);
-    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Exactly(NbreDays+1);
-    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Exactly(NbreDays+1);
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Twice();
   }
 
   void AtSunriseShouldWakeup()
   {
-    InitMockCalls();
+    Init();
     HandleTimeFromNowToEvent(Sunset + Night);
     Verify(Method(ArduinoFake(), digitalWrite));
   }
 
-  void TestInitDaylightSleepingParam()
+  void FromNowTo8thSunset()
   {
-    Now = Sunset - DayDuration - 5;
-    TEST_TIME_MGR::FromNowToNextSunset();
+    int NbreDays = 8;
+    Init();
+    HandleTimeFromNowToEvent(Sunset + NbreDays*DayDuration + 5);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Exactly(NbreDays+2);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Exactly(NbreDays+1);
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Exactly(NbreDays+2);
+  }
+
+  void FromNoonToSunset()
+  {
+    Now = Sunrise + 5; // Now at noon
+    Sunrise = Sunrise + DayDuration;
+    When(Method(Time_Client_Mock, GetEpochTime)).AlwaysReturn(Now);
+    Init();
+    HandleTimeFromNowToEvent(Sunset);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Once();
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Once();
+  }
+
+  void FromNoonTo8thSunset()
+  {
+    int NbreDays = 8;
+    Now = Sunrise + 5; // Now at noon
+    When(Method(Time_Client_Mock, GetEpochTime)).AlwaysReturn(Now);
+    Sunrise = Sunrise + DayDuration;
+    Init();
+    HandleTimeFromNowToEvent(Sunset + NbreDays*DayDuration + 5);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Exactly(NbreDays+1);
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Exactly(NbreDays+1);
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).Exactly(NbreDays+1);
+  }
+
+  void InitAtNightShouldGoToSleep()
+  {
+    Init();
+    Verify(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).Once();
+    Verify(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).Once();
   }
 };
 
@@ -150,17 +174,21 @@ TEST_TIME_MGR* TestTimeMgr;
 
 void setUp(void)
 {
+  Now = 1676306813;
+  Sunrise = 1676306820;
+  Sunset = Sunrise + Daylight;
   ArduinoFakeReset();
-  Method(Time_Client_Mock, Init) = true;
-  When(Method(Time_Client_Mock, GetEpochTime)).AlwaysReturn(Now);
+  Solar_Events_Mock.ClearInvocationHistory();
+  Time_Client_Mock.ClearInvocationHistory();
+
   tc = &Time_Client_Mock.get();
   se = &Solar_Events_Mock.get();
 
-  WhenCallMockGetNextEvents();
+  Method(Time_Client_Mock, Init) = true;
+  When(Method(Time_Client_Mock, GetEpochTime)).AlwaysReturn(Now);
+
   TestTimeMgr = new TEST_TIME_MGR();
-  TestTimeMgr->Init();
-  Solar_Events_Mock.ClearInvocationHistory();
-  Time_Client_Mock.ClearInvocationHistory();
+  InitMockCalls();
 }
 
 void tearDown(void)
@@ -176,10 +204,11 @@ int main(int argc, char *argv[])
   RUN_TEST([](){TestTimeMgr->AtSunsetShouldGoToSleep();});
   RUN_TEST([](){TestTimeMgr->AtSunsetShouldGetNewSolarEvents();});
   RUN_TEST([](){TestTimeMgr->AtSunsetHardwareFailureShouldGoToSleep();});
-  RUN_TEST([](){TestTimeMgr->OverSunsetShouldCallSleepOnce();});
+  RUN_TEST([](){TestTimeMgr->OverSunsetShouldCallSleepTwice();});
   RUN_TEST([](){TestTimeMgr->AtSunriseShouldWakeup();});
-  RUN_TEST([](){TestTimeMgr->FromNowToNextSunset();});
-  RUN_TEST([](){TestTimeMgr->TestInitDaylightSleepingParam();});
-
+  RUN_TEST([](){TestTimeMgr->FromNowTo8thSunset();});
+  RUN_TEST([](){TestTimeMgr->FromNoonToSunset();});
+  RUN_TEST([](){TestTimeMgr->FromNoonTo8thSunset();});
+  RUN_TEST([](){TestTimeMgr->InitAtNightShouldGoToSleep();});
   return UNITY_END();
 }

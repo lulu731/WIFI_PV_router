@@ -30,10 +30,17 @@ void TIME_MGR::Init(const int a_DayDuration)
 {
   m_Time_Client->Init();
   m_Solar_Events->GetNextEvents(m_Time_Client->GetEpochTime(), m_Sunrise, m_Sunset);
-  if (m_Time_Client->GetEpochTime() < m_Sunset - a_DayDuration)
+
+  if (m_Sunrise < m_Sunset)
   {
+    digitalWrite(12, HIGH);
+    Serial.print('9'); // command to sleep device
+    m_IsSleeping = true;
+  }
+  else
+  {
+    digitalWrite(12, LOW);
     m_IsSleeping = false;
-    m_Sunset -= a_DayDuration;
   }
 }
 
