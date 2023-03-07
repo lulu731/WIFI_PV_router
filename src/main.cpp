@@ -82,7 +82,7 @@ void loop()
     else
     {
       doc["divertedEnergy"] = WebServer.UpdateDivEnergy(doc["divertedEnergy"]);
-      doc["isSleeping"] = WasSleeping;
+      doc["isSleeping"] = IsSleeping;
       str.clear();
       serializeJson(doc, str);
       LastJson = str;
