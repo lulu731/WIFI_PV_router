@@ -1,13 +1,15 @@
 #ifndef __NTP_TIME_H__
 #define __NTP_TIME_H__
 
+#include "ntp_time_itf.h"
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 
-class TIME_CLIENT {
+class TIME_CLIENT : public TIME_CLIENT_ITF
+{
 public:
   TIME_CLIENT(const String&);
-  ~TIME_CLIENT();
+  virtual ~TIME_CLIENT();
   bool Init();
   unsigned long GetEpochTime();
 private:

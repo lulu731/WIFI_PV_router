@@ -1,7 +1,7 @@
 #include "secrets.h"
 #include "web_server.h"
 #include "wifi_manager.h"
-#include "ntp_time.h"
+#include "time_manager.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266mDNS.h>
@@ -11,6 +11,8 @@
 #define SERVER_NAME PVROUTER_NAME
 
 WEBSERVER WebServer;
+TIME_MGR TimeMgr;
+
 String LastJson = "{\"realPower1\": 0.0, \"realPower2\": 0.0, \"divertedEnergy\": 0.0}";
 
 void setup()
@@ -31,26 +33,43 @@ void setup()
 
   LittleFS.begin();
 
-  WebServer.Start(LastJson);
+  WebServer.Start(&LastJson);
   #ifdef DEBUG_HARD
     Serial.println("HTTP server started");
   #endif
 
-  TIME_CLIENT TimeClient("194.158.119.97");
-  TimeClient.Init();
+  TimeMgr.Init();
   #ifdef DEBUG_HARD
     Serial.println("Time client started");
-    Serial.println(TimeClient.GetEpochTime());
+    Serial.println(TimeMgr.GetTime());
   #endif
 }
 
 StaticJsonDocument<512> doc;
 String str;
+bool WasSleeping = false;
 
 void loop()
 {
   MDNS.update();
   WebServer.HandleClient();
+  bool IsSleeping = TimeMgr.HandleTime();
+
+  if (WasSleeping != IsSleeping)
+  {
+    WasSleeping = IsSleeping;
+    const time_t t = TimeMgr.GetTime();
+    String str = String(std::ctime(&t));
+    if (!IsSleeping)
+    {
+      WebServer.BroadcastTXT("Waking up : " + str);
+      WebServer.ResetDivEnergy();
+    }
+    else
+    {
+      WebServer.BroadcastTXT("Sleeping : " + str);
+    }
+  }
 
   // read text in Serial buffer and send to client
   if(Serial.available() > 0)
@@ -63,7 +82,7 @@ void loop()
     else
     {
       doc["divertedEnergy"] = WebServer.UpdateDivEnergy(doc["divertedEnergy"]);
-      doc["isSleeping"] = true;
+      doc["isSleeping"] = IsSleeping;
       str.clear();
       serializeJson(doc, str);
       LastJson = str;

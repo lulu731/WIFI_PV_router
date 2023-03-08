@@ -16,7 +16,7 @@ WEBSERVER::~WEBSERVER() {
 }
 
 
-void WEBSERVER::Start(const String& aLastJson)
+void WEBSERVER::Start(const String* aLastJson)
 {
   m_Server->on("/", HTTP_GET, [this]() {
     File file = LittleFS.open("/index.html", "r");
@@ -34,8 +34,8 @@ void WEBSERVER::Start(const String& aLastJson)
   m_WebSocketServer->onEvent([this, aLastJson](uint8_t num, WStype_t type, uint8_t * message, size_t length)
   {
     switch (type) {
-      case WStype_DISCONNECTED:
-        BroadcastTXT(aLastJson);
+      case WStype_CONNECTED:
+        BroadcastTXT(*aLastJson);
         break;
       case WStype_TEXT :
       {
@@ -97,6 +97,7 @@ void WEBSERVER::UpdateFirmware()
     HandleOTAUpdate();
     delay(100);
   }
+  EndOTAUpdate(); //No update processed after two minutes
 }
 
 
