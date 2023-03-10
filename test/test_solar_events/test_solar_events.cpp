@@ -58,11 +58,28 @@ void GetNextSunriseSunsetFrom22OClock()
   TEST_ASSERT_UINT32_WITHIN(12*3600, sunrise, sunset);
 }
 
+void GetNextSunriseSunsetFromSunset()
+{
+  TimeInfo.tm_hour = 12;
+  time_t now = mktime(&TimeInfo);
+
+  SunEvent.GetNextEvents(now, sunrise, sunset);
+  now = sunset;
+  SunEvent.GetNextEvents(now, sunrise, sunset);
+  //Test next solar events verify : now < sunrise < sunset
+  TEST_ASSERT_GREATER_THAN_UINT32(now, sunrise);
+  TEST_ASSERT_GREATER_THAN_UINT32(now, sunset);
+  TEST_ASSERT_GREATER_THAN_UINT32(sunrise, sunset);
+  TEST_ASSERT_UINT32_WITHIN(16*3600, now, sunrise);
+  TEST_ASSERT_UINT32_WITHIN(24*3600 + 1, now, sunset);
+}
+
 int main(int argc, char *argv[])
 {
   UNITY_BEGIN();
   RUN_TEST(GetNextSunriseSunsetFromNoon);
   RUN_TEST(GetNextSunriseSunsetFromOneOClock);
   RUN_TEST(GetNextSunriseSunsetFrom22OClock);
+  RUN_TEST(GetNextSunriseSunsetFromSunset);
   UNITY_END();
 }

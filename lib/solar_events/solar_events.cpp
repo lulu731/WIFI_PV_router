@@ -21,7 +21,7 @@ void SUN_EVENT::GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSu
   timeInfo->tm_hour = totalMinutes / 60;
   timeInfo->tm_min = totalMinutes % 60;
   aSunrise = mktime(timeInfo);
-  if (aSunrise < aTime)
+  if (aSunrise <= aTime)
   {
     aSunrise += SECONDS_PER_DAY;
   }
@@ -30,7 +30,7 @@ void SUN_EVENT::GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSu
   timeInfo->tm_hour = totalMinutes / 60;
   timeInfo->tm_min = totalMinutes % 60;
   aSunset = mktime(timeInfo);
-  if (aSunset < aTime)
+  if (aSunset <= aTime)
   {
     aSunset += SECONDS_PER_DAY;
   }
