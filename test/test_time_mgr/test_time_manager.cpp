@@ -39,9 +39,8 @@ void WhenCallMockGetNextEvents()
 void InitMockCalls()
 {
   WhenCallMockGetNextEvents();
-  When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char)).Using('9')).AlwaysReturn();
-  When(Method(ArduinoFake(), digitalWrite).Using(12, HIGH)).AlwaysReturn();
-  When(Method(ArduinoFake(), digitalWrite).Using(12, LOW)).AlwaysReturn();
+  When(OverloadedMethod(ArduinoFake(Serial), print, size_t(char))).AlwaysReturn();
+  When(Method(ArduinoFake(), digitalWrite)).AlwaysReturn();
 }
 
 class TEST_TIME_MGR
