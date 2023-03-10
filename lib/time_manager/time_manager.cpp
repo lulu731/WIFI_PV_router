@@ -40,6 +40,7 @@ void TIME_MGR::Init(const int a_DayDuration)
   else
   {
     digitalWrite(12, LOW);
+    Serial.print('0'); // Be sure the heater is OFF
     m_IsSleeping = false;
   }
 }
@@ -69,13 +70,19 @@ bool TIME_MGR::HandleTime()
   }
   else
   // Time crossing sunrise => wake up
-  {
     if (m_Time_Client->GetEpochTime() >= m_Sunrise && m_IsSleeping)
     {
       digitalWrite(12, LOW); // wake up the device
       m_IsSleeping = false;
     }
-  }
 
   return m_IsSleeping;
+}
+
+time_t TIME_MGR::GetSunrise() {
+  return m_Sunrise;
+}
+
+time_t TIME_MGR::GetSunset() {
+  return m_Sunset;
 }

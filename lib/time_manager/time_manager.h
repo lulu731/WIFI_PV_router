@@ -28,6 +28,8 @@ public:
 #endif
   void Init(const int a_DayDuration = 24 * 60 * 60);
   time_t GetTime();
+  time_t GetSunrise();
+  time_t GetSunset();
   bool HandleTime();
 
   //void Sleep();
