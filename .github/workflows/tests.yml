@@ -23,7 +23,7 @@ jobs:
         run: |
           cp .github/workflows/tests_secrets.h include/secrets.h
           cp .github/workflows/tests_position.h lib/solar_events/position.h
-      - name: Run TimeMgr Tests
+      - name: Run Tests
         run: |
-          echo "Testing TimeMgr"
+          echo "Testing Native"
           pio test -e native
