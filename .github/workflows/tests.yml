@@ -1,0 +1,29 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  test:
+    name: Tests for TimeMgr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+      - name: Copy position and secrets headers
+        run: |
+          cp .github/workflows/tests_secrets.h include/secrets.h
+          cp .github/workflows/tests_position.h lib/solar_events/position.h
+      - name: Run Tests
+        run: |
+          echo "Testing Native"
+          pio test -e native

@@ -1,18 +1,25 @@
-#include "OTA_update.h"
 #include "secrets.h"
 #include "web_server.h"
-#include "web_socket.h"
 #include "wifi_manager.h"
+#include "time_manager.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266mDNS.h>
+#include <LittleFS.h>
 
 #define LOCAL_IP PVROUTER_IP
 #define SERVER_NAME PVROUTER_NAME
 
+WEBSERVER WebServer;
+TIME_MGR TimeMgr;
+
+String LastJson = "{\"realPower1\": 0.0, \"realPower2\": 0.0, \"divertedEnergy\": 0.0}";
 
 void setup()
 {
+  pinMode(12, OUTPUT);
+  digitalWrite(12, LOW);
+
   Serial.begin(115200);
   delay(10);
 
@@ -27,51 +34,92 @@ void setup()
     Serial.println(SERVER_NAME);
   #endif
 
-  StartWebserver();
+  LittleFS.begin();
+
+  WebServer.Start(&LastJson);
   #ifdef DEBUG_HARD
     Serial.println("HTTP server started");
   #endif
 
-  StartWebSocket();
+  delay(60000); // wait for Mega initializing
+
+  TimeMgr.Init();
+  #ifdef DEBUG_HARD
+    Serial.print("Time client started: ");
+    time_t t = TimeMgr.GetTime();
+    Serial.println(String(std::ctime(&t)));
+    time_t sunrise = TimeMgr.GetSunrise();
+    Serial.print("Sunrise: ");
+    Serial.println(String(std::ctime(&sunrise)));
+    Serial.print("Sunset: ");
+    time_t sunset = TimeMgr.GetSunset();
+    Serial.println(String(std::ctime(&sunset)));
+  #endif
 }
 
 StaticJsonDocument<512> doc;
 String str;
-float divertedEnergy = 0;
+bool WasSleeping = false;
+
 void loop()
 {
   MDNS.update();
-  ServerHandleClient();
-  WebSocketLoop();
+  WebServer.HandleClient();
+  bool IsSleeping = TimeMgr.HandleTime();
+
+  if (WasSleeping != IsSleeping)
+  {
+    WasSleeping = IsSleeping;
+    const time_t t = TimeMgr.GetTime();
+    String str = String(std::ctime(&t));
+    if (!IsSleeping)
+    {
+      WebServer.BroadcastTXT("Waking up : " + str);
+      WebServer.ResetDivEnergy();
+      #ifdef DEBUG_HARD
+        time_t sunrise = TimeMgr.GetSunrise();
+        Serial.print("Sunrise: ");
+        Serial.println(String(std::ctime(&sunrise)));
+        Serial.print("Sunset: ");
+        time_t sunset = TimeMgr.GetSunset();
+        Serial.println(String(std::ctime(&sunset)));
+      #endif
+    }
+    else
+    {
+      WebServer.BroadcastTXT("Sleeping : " + str);
+      #ifdef DEBUG_HARD
+        time_t sunrise = TimeMgr.GetSunrise();
+        Serial.print("Sunrise: ");
+        Serial.println(String(std::ctime(&sunrise)));
+        Serial.print("Sunset: ");
+        time_t sunset = TimeMgr.GetSunset();
+        Serial.println(String(std::ctime(&sunset)));
+      #endif
+    }
+    deserializeJson(doc, LastJson);
+    doc["isSleeping"] = IsSleeping;
+    LastJson.clear();
+    serializeJson(doc, LastJson);
+    WebServer.BroadcastTXT(LastJson);
+  }
 
   // read text in Serial buffer and send to client
   if(Serial.available() > 0)
   {
     DeserializationError error = deserializeJson(doc, Serial);
-    if (!error)
+    if (error)
     {
-      divertedEnergy += doc["divertedEnergy"].as<float>();
-      doc["divertedEnergy"] = divertedEnergy;
-      str.clear();
-      serializeJson(doc, str);
-      WebSocketBroadcastTXT(str);
+      str = "Error: deserializing from Wemos : " + String(error.c_str());
     }
     else
     {
-      str = "Error: deserializing from Wemos : " + String(error.c_str());
-      WebSocketBroadcastTXT(str);
+      doc["divertedEnergy"] = WebServer.UpdateDivEnergy(doc["divertedEnergy"]);
+      doc["isSleeping"] = IsSleeping;
+      str.clear();
+      serializeJson(doc, str);
+      LastJson = str;
     }
+    WebServer.BroadcastTXT(str);
   }
-
-  #ifdef WIFI_UNUSED
-    OTAUpdate();
-    // 2 min to update sketch
-    for (size_t i = 0; i < 1200; i++)
-    {
-      HandleOTAUpdate();
-      delay(100);
-    }
-    // no update go to sleep
-    ESP.deepSleep(0);
-  #endif
 }
