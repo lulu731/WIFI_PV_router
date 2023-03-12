@@ -3,10 +3,7 @@
 #include <sunset.h>
 #include <ctime>
 
-
-void SUN_EVENT::GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSunset)
-{
-  const int SECONDS_PER_DAY = 24 * 60 * 60;
+void SUN_EVENT::GetEvents(const time_t& aTime, time_t& aSunrise, time_t& aSunset) {
   SunSet Sun;
   double latitude = LAT;
   double longitude = LONG;
@@ -21,17 +18,26 @@ void SUN_EVENT::GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSu
   timeInfo->tm_hour = totalMinutes / 60;
   timeInfo->tm_min = totalMinutes % 60;
   aSunrise = mktime(timeInfo);
-  if (aSunrise <= aTime)
-  {
-    aSunrise += SECONDS_PER_DAY;
-  }
 
   totalMinutes = Sun.calcSunset();
   timeInfo->tm_hour = totalMinutes / 60;
   timeInfo->tm_min = totalMinutes % 60;
   aSunset = mktime(timeInfo);
+}
+
+void SUN_EVENT::GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSunset)
+{
+  const int SECONDS_PER_DAY = 24 * 60 * 60;
+  GetEvents(aTime, aSunrise, aSunset);
+  if (aSunrise <= aTime)
+  {
+    time_t anotherSunset;
+    GetEvents(aTime + SECONDS_PER_DAY, aSunrise, anotherSunset);
+  }
+
   if (aSunset <= aTime)
   {
-    aSunset += SECONDS_PER_DAY;
+    time_t anotherSunrise;
+    GetEvents(aTime + SECONDS_PER_DAY, anotherSunrise, aSunset);
   }
 }
