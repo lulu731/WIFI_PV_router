@@ -7,13 +7,14 @@
 
 class TIME_CLIENT : public TIME_CLIENT_ITF
 {
-public:
-  TIME_CLIENT(const String&);
+  public:
+  TIME_CLIENT( const String& );
   virtual ~TIME_CLIENT();
-  bool Init();
+  bool          Init();
   unsigned long GetEpochTime();
-private:
-  WiFiUDP m_WifiUdp;
+
+  private:
+  WiFiUDP    m_WifiUdp;
   NTPClient* m_NtpClient;
 };
 

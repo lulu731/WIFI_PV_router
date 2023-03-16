@@ -3,9 +3,9 @@
 
 class TIME_CLIENT_ITF
 {
-public:
+  public:
   virtual ~TIME_CLIENT_ITF(){};
-  virtual bool Init() = 0;
+  virtual bool          Init() = 0;
   virtual unsigned long GetEpochTime() = 0;
 };
 

@@ -3,7 +3,7 @@
 
 #include "web_server.h"
 
-void OTAUpdate(WEBSERVER*);
+void OTAUpdate( WEBSERVER* );
 void HandleOTAUpdate();
 void EndOTAUpdate();
 

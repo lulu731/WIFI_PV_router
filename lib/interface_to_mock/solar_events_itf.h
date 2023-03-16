@@ -5,9 +5,9 @@
 
 class SUN_EVENTS_ITF
 {
-public:
+  public:
   virtual ~SUN_EVENTS_ITF(){};
-  virtual void GetNextEvents(const time_t& aTime, time_t& aSunrise, time_t& aSunset) = 0;
+  virtual void GetNextEvents( const time_t& aTime, time_t& aSunrise, time_t& aSunset ) = 0;
 };
 
 #endif

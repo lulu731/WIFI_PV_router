@@ -8,29 +8,29 @@
 
 class TIME_MGR : public TIME_MGR_ITF
 {
-friend class TEST_TIME_MGR;
+  friend class TEST_TIME_MGR;
 
-private:
+  private:
   TIME_CLIENT_ITF* m_Time_Client;
-  SUN_EVENTS_ITF* m_Solar_Events;
-  time_t m_Sunrise, m_Sunset;
-  bool m_IsSleeping;
-  void GetNextSolarEvents();
+  SUN_EVENTS_ITF*  m_Solar_Events;
+  time_t           m_Sunrise, m_Sunset;
+  bool             m_IsSleeping;
+  void             GetNextSolarEvents();
 
   //void ReadyWakeUp();
-protected:
-  TIME_MGR(TIME_CLIENT_ITF* a_Time_Client, SUN_EVENTS_ITF* a_Solar_Events);
+  protected:
+  TIME_MGR( TIME_CLIENT_ITF* a_Time_Client, SUN_EVENTS_ITF* a_Solar_Events );
 
-public:
+  public:
 #ifndef UNIT_TEST
   TIME_MGR();
   ~TIME_MGR();
 #endif
-  void Init(const int a_DayDuration = 24 * 60 * 60);
+  void   Init( const int a_DayDuration = 24 * 60 * 60 );
   time_t GetTime();
   time_t GetSunrise();
   time_t GetSunset();
-  bool HandleTime();
+  bool   HandleTime();
 
   //void Sleep();
 };
