@@ -1,10 +1,11 @@
 #ifndef __WEB_SERVER_H__
 #define __WEB_SERVER_H__
 
+#include "webserver_itf.h"
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
 
-class WEBSERVER
+class WEBSERVER : public WEBSERVER_ITF
 {
   public:
   WEBSERVER();
