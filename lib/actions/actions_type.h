@@ -1,0 +1,12 @@
+#ifndef _ACTIONS_T_H_
+#define _ACTIONS_T_H_
+
+enum ACTION_TYPE
+{
+  ACTION_HEATER_OFF_T = 0,
+  ACTION_HEATER_ON_T = 1,
+  ACTION_RESET_DIV_ENERGY_T = 8,
+  ACTION_UPDATE_FIRMWARE_T = 9
+};
+
+#endif
