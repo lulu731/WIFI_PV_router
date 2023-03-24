@@ -61,6 +61,30 @@ class TEST_ACTION
 
 TEST_ACTION* TestAction = new TEST_ACTION();
 
+void Char0ShouldGetAction0()
+{
+  int actionType = int( '0' ) - 48;
+  TEST_ASSERT_EQUAL( ACTION_HEATER_OFF_T, ACTION_TYPE( actionType ) );
+}
+
+void Char1ShouldGetAction1()
+{
+  int actionType = int( '1' ) - 48;
+  TEST_ASSERT_EQUAL( ACTION_HEATER_ON_T, ACTION_TYPE( actionType ) );
+}
+
+void Char8ShouldGetAction8()
+{
+  int actionType = int( '8' ) - 48;
+  TEST_ASSERT_EQUAL( ACTION_RESET_DIV_ENERGY_T, ACTION_TYPE( actionType ) );
+}
+
+void Char9ShouldGetAction9()
+{
+  int actionType = int( '9' ) - 48;
+  TEST_ASSERT_EQUAL( ACTION_UPDATE_FIRMWARE_T, ACTION_TYPE( actionType ) );
+}
+
 int main( int argc, char* argv[] )
 {
   UNITY_BEGIN();
@@ -68,5 +92,9 @@ int main( int argc, char* argv[] )
   RUN_TEST( [](){TestAction->TestActionHeaterON();} );
   RUN_TEST( [](){TestAction->TestActionResetDivEnerg();} );
   RUN_TEST( [](){TestAction->TestActionUpdateFirmware();} );
+  RUN_TEST( [](){Char0ShouldGetAction0();} );
+  RUN_TEST( [](){Char1ShouldGetAction1();} );
+  RUN_TEST( [](){Char8ShouldGetAction8();} );
+  RUN_TEST( [](){Char9ShouldGetAction9();} );
   return UNITY_END();
 }

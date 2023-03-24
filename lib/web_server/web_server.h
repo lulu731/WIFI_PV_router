@@ -1,7 +1,8 @@
 #ifndef __WEB_SERVER_H__
 #define __WEB_SERVER_H__
 
-#include "webserver_itf.h"
+#include "web_server_itf.h"
+#include "actions.h"
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
 
@@ -22,6 +23,7 @@ class WEBSERVER : public WEBSERVER_ITF
   ESP8266WebServer* m_Server;
   WebSocketsServer* m_WebSocketServer;
   float             m_DivertedEnergy;
+  ACTIONS*          m_Actions;
 };
 
 #endif

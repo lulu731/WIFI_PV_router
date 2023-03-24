@@ -1,4 +1,5 @@
 #include "web_server.h"
+#include "actions_type.h"
 #include "OTA_update.h"
 #include <LittleFS.h>
 
@@ -6,11 +7,13 @@ WEBSERVER::WEBSERVER()
 {
   m_Server = new ESP8266WebServer( 80 );
   m_WebSocketServer = new WebSocketsServer( 81 );
+  m_Actions = new ACTIONS( this );
 }
 
 
 WEBSERVER::~WEBSERVER()
 {
+  delete m_Actions;
   delete m_WebSocketServer;
   m_Server->stop();
   delete m_Server;
@@ -44,26 +47,8 @@ void WEBSERVER::Start( const String* aLastJson )
             case WStype_CONNECTED: BroadcastTXT( *aLastJson ); break;
             case WStype_TEXT:
             {
-              if( message[0] == '0' )
-              {
-                HeaterCmd( 0 );
-                break;
-              }
-              else if( message[0] == '1' )
-              {
-                HeaterCmd( 1 );
-                break;
-              }
-              else if( message[0] == '9' )
-              {
-                UpdateFirmware();
-                break;
-              }
-              else if( message[0] == '8' )
-              {
-                ResetDivEnergy();
-              }
-              break;
+              ACTION_TYPE actionType = ACTION_TYPE( int( message[0] ) - 48 );
+              this->m_Actions->Execute( actionType );
             }
             default: break;
             }
